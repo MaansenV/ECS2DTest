@@ -19,7 +19,9 @@ namespace ECS2D.Rendering
             private struct ValidatedClip
             {
                 public string Name;
-                public int[] FrameIndices;
+                public int Row;
+                public int StartColumn;
+                public int FrameCount;
                 public float FrameRate;
                 public bool Loop;
                 public bool PingPong;
@@ -42,6 +44,12 @@ namespace ECS2D.Rendering
                 DependsOn(authoring.transform);
                 DependsOn(authoring.AnimationSet);
                 DependsOn(authoring.AnimationSet.SpriteSheet);
+
+                if (!authoring.AnimationSet.SpriteSheet.AutoGenerateGridFrames)
+                {
+                    Debug.LogError($"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' requires a grid-based SpriteSheetDefinition. Enable autoGenerateGridFrames on '{authoring.AnimationSet.SpriteSheet.name}'.");
+                    return;
+                }
 
                 if (!TryCollectValidatedClips(authoring, out var validatedClips))
                 {
@@ -119,6 +127,8 @@ namespace ECS2D.Rendering
                     return false;
                 }
 
+                int sheetColumns = math.max(1, authoring.AnimationSet.SpriteSheet.Columns);
+                int sheetRows = math.max(1, authoring.AnimationSet.SpriteSheet.Rows);
                 int frameCount = math.max(1, authoring.AnimationSet.SpriteSheet.FrameCount);
                 var seenNames = new HashSet<string>(StringComparer.Ordinal);
 
@@ -138,35 +148,47 @@ namespace ECS2D.Rendering
                         continue;
                     }
 
-                    if (clip.FrameIndices == null || clip.FrameIndices.Length == 0)
+                    if (clip.FrameCount <= 0)
                     {
                         Debug.LogWarning($"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' has an empty clip '{clipName}'. That clip was skipped.");
                         continue;
                     }
 
-                    bool frameIndexError = false;
-                    for (int frameIndex = 0; frameIndex < clip.FrameIndices.Length; frameIndex++)
+                    if (clip.Row < 0 || clip.Row >= sheetRows)
                     {
-                        int spriteFrameIndex = clip.FrameIndices[frameIndex];
-                        if (spriteFrameIndex < 0 || spriteFrameIndex >= frameCount)
-                        {
-                            Debug.LogError(
-                                $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' has clip '{clipName}' with frame index {spriteFrameIndex}, " +
-                                $"but the SpriteSheet only has {frameCount} frames. That clip was skipped.");
-                            frameIndexError = true;
-                            break;
-                        }
+                        Debug.LogError($"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' has clip '{clipName}' with row {clip.Row}, but the SpriteSheet only has {sheetRows} rows. That clip was skipped.");
+                        continue;
                     }
 
-                    if (frameIndexError)
+                    if (clip.StartColumn < 0 || clip.StartColumn >= sheetColumns)
                     {
+                        Debug.LogError($"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' has clip '{clipName}' with start column {clip.StartColumn}, but the SpriteSheet only has {sheetColumns} columns. That clip was skipped.");
+                        continue;
+                    }
+
+                    int endColumn = clip.StartColumn + clip.FrameCount - 1;
+                    if (endColumn >= sheetColumns)
+                    {
+                        Debug.LogError(
+                            $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' has clip '{clipName}' starting at column {clip.StartColumn} with length {clip.FrameCount}, " +
+                            $"but the SpriteSheet only has {sheetColumns} columns. That clip was skipped.");
+                        continue;
+                    }
+
+                    int startFrameIndex = (clip.Row * sheetColumns) + clip.StartColumn;
+                    if (startFrameIndex < 0 || startFrameIndex + clip.FrameCount > frameCount)
+                    {
+                        Debug.LogError(
+                            $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' has clip '{clipName}' that resolves outside the SpriteSheet frame range. That clip was skipped.");
                         continue;
                     }
 
                     validatedClips.Add(new ValidatedClip
                     {
                         Name = clipName,
-                        FrameIndices = clip.FrameIndices,
+                        Row = clip.Row,
+                        StartColumn = clip.StartColumn,
+                        FrameCount = clip.FrameCount,
                         FrameRate = math.max(0f, clip.FrameRate),
                         Loop = clip.Loop,
                         PingPong = clip.PingPong
@@ -186,37 +208,25 @@ namespace ECS2D.Rendering
             {
                 blobReference = default;
 
-                int totalFrameCount = 0;
-                for (int i = 0; i < validatedClips.Count; i++)
-                {
-                    totalFrameCount += validatedClips[i].FrameIndices.Length;
-                }
-
                 using var builder = new BlobBuilder(Allocator.Temp);
                 ref var root = ref builder.ConstructRoot<SpriteAnimationSetBlob>();
                 root.SpriteSheetId = animationSet.SpriteSheet.SheetId;
+                root.Columns = math.max(1, animationSet.SpriteSheet.Columns);
 
                 var clipArray = builder.Allocate(ref root.Clips, validatedClips.Count);
-                var frameArray = builder.Allocate(ref root.FrameIndices, totalFrameCount);
-
-                int frameCursor = 0;
                 for (int i = 0; i < validatedClips.Count; i++)
                 {
                     var clip = validatedClips[i];
                     clipArray[i] = new SpriteAnimationClipBlob
                     {
                         Name = (FixedString64Bytes)clip.Name,
-                        FrameStart = frameCursor,
-                        FrameCount = clip.FrameIndices.Length,
+                        Row = clip.Row,
+                        StartColumn = clip.StartColumn,
+                        FrameCount = clip.FrameCount,
                         FrameRate = clip.FrameRate,
                         Loop = clip.Loop ? (byte)1 : (byte)0,
                         PingPong = clip.PingPong ? (byte)1 : (byte)0
                     };
-
-                    for (int j = 0; j < clip.FrameIndices.Length; j++)
-                    {
-                        frameArray[frameCursor++] = clip.FrameIndices[j];
-                    }
                 }
 
                 blobReference = builder.CreateBlobAssetReference<SpriteAnimationSetBlob>(Allocator.Persistent);

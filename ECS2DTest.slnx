@@ -27,10 +27,10 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.2D.SpriteShape.Editor.csproj" />
   <Project Path="Unity.VisualStudio.Editor.csproj" />
+  <Project Path="ECS2D.Rendering.csproj" />
   <Project Path="Unity.Entities.csproj" />
   <Project Path="PPv2URPConverters.csproj" />
   <Project Path="Unity.Scenes.csproj" />
-  <Project Path="ECS2D.Rendering.csproj" />
   <Project Path="Unity.2D.Animation.Editor.csproj" />
   <Project Path="Nsprites.Rendering.csproj" />
   <Project Path="Unity.Entities.Editor.csproj" />
@@ -93,6 +93,7 @@
   <Project Path="Unity.Mathematics.Extensions.csproj" />
   <Project Path="Unity.2D.PixelPerfect.csproj" />
   <Project Path="Unity.Entities.Graphics.Editor.csproj" />
+  <Project Path="ECS2D.Rendering.Tests.csproj" />
   <Project Path="Unity.Transforms.Hybrid.csproj" />
   <Project Path="Unity.Serialization.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Shaders.csproj" />

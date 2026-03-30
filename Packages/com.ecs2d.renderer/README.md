@@ -29,10 +29,11 @@ Reusable ECS sprite rendering core extracted from the sample project.
 
 ## Usage
 1. Create one or more `SpriteSheetDefinition` assets under `Resources/SpriteSheets`.
-2. For animated sprites, create a `SpriteAnimationSetDefinition` asset that points at exactly one sprite sheet and contains named clips.
+2. For animated sprites, create a `SpriteAnimationSetDefinition` asset that points at exactly one grid-based sprite sheet and contains named clips.
 3. Add `SpriteDataAuthoring` to a prefab for transform/color setup, then add `SpriteAnimationAuthoring` to the same GameObject and pick the start animation by name.
-4. The animation baker stores the clip set as a blob reference and initializes `SpriteAnimationState` with the chosen clip.
-5. `SpriteAnimationSystem` runs before `SpriteSystem`, advances the clip, and writes the final frame index back into `SpriteData.SpriteFrameIndex`.
-6. `SpriteSystem` renders those baked entities in both the editor world and the play world.
-7. Add `EntitiesReferenceAuthoring` plus `SpawnSettingsAuthoring` only in scenes where you want the optional spawn benchmark workflow.
-8. A ready-made example is available on `Assets/Prefabs/SwordMan/SwordMan.prefab` with `Assets/Resources/SpriteAnimations/SwordManAnimations.asset`.
+4. Each clip is authored as `Row`, `StartColumn`, and `FrameCount`, so a clip stays on one sprite-sheet row instead of listing every frame index manually.
+5. The animation baker stores the clip set as a blob reference and initializes `SpriteAnimationState` with the chosen clip.
+6. `SpriteAnimationSystem` runs before `SpriteSystem`, advances the clip, and writes the final frame index back into `SpriteData.SpriteFrameIndex`.
+7. `SpriteSystem` renders those baked entities in both the editor world and the play world.
+8. Add `EntitiesReferenceAuthoring` plus `SpawnSettingsAuthoring` only in scenes where you want the optional spawn benchmark workflow.
+9. A ready-made example is available on `Assets/Prefabs/SwordMan/SwordMan.prefab` with `Assets/Resources/SpriteAnimations/SwordManAnimations.asset`.

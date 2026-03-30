@@ -9,7 +9,9 @@ namespace ECS2D.Rendering
     public struct SpriteAnimationClip
     {
         public string Name;
-        public int[] FrameIndices;
+        public int Row;
+        public int StartColumn;
+        public int FrameCount;
         public float FrameRate;
         public bool Loop;
         public bool PingPong;
@@ -18,7 +20,8 @@ namespace ECS2D.Rendering
     public struct SpriteAnimationClipBlob
     {
         public FixedString64Bytes Name;
-        public int FrameStart;
+        public int Row;
+        public int StartColumn;
         public int FrameCount;
         public float FrameRate;
         public byte Loop;
@@ -28,8 +31,8 @@ namespace ECS2D.Rendering
     public struct SpriteAnimationSetBlob
     {
         public int SpriteSheetId;
+        public int Columns;
         public BlobArray<SpriteAnimationClipBlob> Clips;
-        public BlobArray<int> FrameIndices;
     }
 
     internal static class SpriteAnimationSetBlobUtility
@@ -97,19 +100,19 @@ namespace ECS2D.Rendering
 
         public static int ResolveSpriteFrameIndex(ref SpriteAnimationSetBlob set, in SpriteAnimationClipBlob clip, int clipFrameIndex)
         {
-            if (clip.FrameCount <= 0 || set.FrameIndices.Length == 0)
+            if (clip.FrameCount <= 0 || set.Columns <= 0)
             {
                 return 0;
             }
 
             int safeClipFrameIndex = math.clamp(clipFrameIndex, 0, clip.FrameCount - 1);
-            int frameIndex = clip.FrameStart + safeClipFrameIndex;
-            if (frameIndex < 0 || frameIndex >= set.FrameIndices.Length)
+            int frameIndex = (clip.Row * set.Columns) + clip.StartColumn + safeClipFrameIndex;
+            if (frameIndex < 0)
             {
                 return 0;
             }
 
-            return set.FrameIndices[frameIndex];
+            return frameIndex;
         }
     }
 }

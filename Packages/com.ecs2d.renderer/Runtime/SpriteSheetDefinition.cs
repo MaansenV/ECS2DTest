@@ -23,6 +23,9 @@ namespace ECS2D.Rendering
         public Bounds WorldBounds => worldBounds;
         public int InitialCapacity => Mathf.Max(1, initialCapacity);
         public int CapacityStep => Mathf.Max(1, capacityStep);
+        public bool AutoGenerateGridFrames => autoGenerateGridFrames;
+        public int Columns => Mathf.Max(1, columns);
+        public int Rows => Mathf.Max(1, rows);
         public int FrameCount => Frames.Length;
         public Vector4[] Frames => GetFrames();
 
@@ -38,10 +41,7 @@ namespace ECS2D.Rendering
                 return frames;
             }
 
-            int safeColumns = Mathf.Max(1, columns);
-            int safeRows = Mathf.Max(1, rows);
-
-            frames = BuildGridFrames(safeColumns, safeRows);
+            frames = BuildGridFrames(Columns, Rows);
             return frames;
         }
 
