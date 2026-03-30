@@ -5,6 +5,7 @@
     "Unity.Burst",
     "Unity.Collections",
     "Unity.Entities",
+    "Unity.Entities.Hybrid",
     "Unity.Jobs",
     "Unity.Mathematics"
   ],

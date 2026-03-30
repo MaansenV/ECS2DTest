@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace ECS2D.Rendering
 {
+    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.Editor)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class SpriteSystem : SystemBase
     {
@@ -15,6 +16,7 @@ namespace ECS2D.Rendering
         private readonly HashSet<int> missingSheetWarnings = new HashSet<int>();
         private Mesh quadMesh;
         private bool hasLoggedMissingDefinitions;
+        private int lastDefinitionsSignature = int.MinValue;
 
         private static readonly int TranslationAndRotationBufferId = Shader.PropertyToID("translationAndRotationBuffer");
         private static readonly int ScaleBufferId = Shader.PropertyToID("scaleBuffer");
@@ -34,6 +36,12 @@ namespace ECS2D.Rendering
 
         protected override void OnUpdate()
         {
+            int currentDefinitionsSignature = SpriteSheetDatabase.GetDefinitionsSignature();
+            if (currentDefinitionsSignature != lastDefinitionsSignature)
+            {
+                BuildRenderGroups();
+            }
+
             if (renderGroups.Count == 0)
             {
                 if (!hasLoggedMissingDefinitions)
@@ -68,6 +76,11 @@ namespace ECS2D.Rendering
                     {
                         sheetCounts[spriteData.SpriteSheetId] = count + 1;
                     }
+                }
+
+                foreach (var group in renderGroups.Values)
+                {
+                    group.ResetCount();
                 }
 
                 foreach (var sheetCount in sheetCounts)
@@ -135,7 +148,7 @@ namespace ECS2D.Rendering
 
             if (quadMesh != null)
             {
-                Object.Destroy(quadMesh);
+                DestroyUnityObject(quadMesh);
                 quadMesh = null;
             }
         }
@@ -152,6 +165,7 @@ namespace ECS2D.Rendering
             var definitions = SpriteSheetDatabase.GetDefinitions();
             if (definitions == null || definitions.Length == 0)
             {
+                lastDefinitionsSignature = SpriteSheetDatabase.GetDefinitionsSignature();
                 hasLoggedMissingDefinitions = false;
                 return;
             }
@@ -178,6 +192,7 @@ namespace ECS2D.Rendering
                 renderGroups.Add(definition.SheetId, new SpriteRenderGroup(definition));
             }
 
+            lastDefinitionsSignature = SpriteSheetDatabase.GetDefinitionsSignature();
             hasLoggedMissingDefinitions = false;
         }
 
@@ -312,7 +327,7 @@ namespace ECS2D.Rendering
 
                 if (Material != null)
                 {
-                    Object.Destroy(Material);
+                    SpriteSystem.DestroyUnityObject(Material);
                 }
             }
 
@@ -370,6 +385,23 @@ namespace ECS2D.Rendering
                     buffer.Release();
                     buffer = null;
                 }
+            }
+        }
+
+        private static void DestroyUnityObject(Object unityObject)
+        {
+            if (unityObject == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Object.Destroy(unityObject);
+            }
+            else
+            {
+                Object.DestroyImmediate(unityObject);
             }
         }
     }

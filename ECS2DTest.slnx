@@ -30,6 +30,7 @@
   <Project Path="Unity.Entities.csproj" />
   <Project Path="PPv2URPConverters.csproj" />
   <Project Path="Unity.Scenes.csproj" />
+  <Project Path="ECS2D.Rendering.csproj" />
   <Project Path="Unity.2D.Animation.Editor.csproj" />
   <Project Path="Nsprites.Rendering.csproj" />
   <Project Path="Unity.Entities.Editor.csproj" />

@@ -13,20 +13,23 @@ namespace Systems
         private EntityQuery _spriteQuery;
         private bool _warnedMissingSheets;
 
-        private const int SpawnPerFrame = 10;
-        private const int MaxSpriteCount = 500;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _random = new Random(555);
             _spriteQuery = state.GetEntityQuery(ComponentType.ReadOnly<SpriteData>());
             state.RequireForUpdate<EntitiesReferences>();
+            state.RequireForUpdate<SpawnSettings>();
         }
 
-        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var spawnSettings = SystemAPI.GetSingleton<SpawnSettings>();
+            if (!spawnSettings.Enabled)
+            {
+                return;
+            }
+
             var sheetDefinitions = SpriteSheetDatabase.GetDefinitions();
             if (sheetDefinitions == null || sheetDefinitions.Length == 0)
             {
@@ -43,12 +46,12 @@ namespace Systems
 
             var references = SystemAPI.GetSingleton<EntitiesReferences>();
             int currentSpriteCount = _spriteQuery.CalculateEntityCount();
-            if (currentSpriteCount >= MaxSpriteCount)
+            if (currentSpriteCount >= spawnSettings.MaxSpriteCount)
             {
                 return;
             }
 
-            int spawnCount = math.min(SpawnPerFrame, MaxSpriteCount - currentSpriteCount);
+            int spawnCount = math.min(spawnSettings.SpawnPerFrame, spawnSettings.MaxSpriteCount - currentSpriteCount);
 
             for (int i = 0; i < spawnCount; i++)
             {
@@ -70,7 +73,6 @@ namespace Systems
             }
         }
 
-        [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
         }

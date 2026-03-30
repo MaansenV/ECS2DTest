@@ -40,13 +40,8 @@ namespace ECS2D.Rendering
 
             int safeColumns = Mathf.Max(1, columns);
             int safeRows = Mathf.Max(1, rows);
-            int expectedFrameCount = safeColumns * safeRows;
 
-            if (frames == null || frames.Length != expectedFrameCount)
-            {
-                frames = BuildGridFrames(safeColumns, safeRows);
-            }
-
+            frames = BuildGridFrames(safeColumns, safeRows);
             return frames;
         }
 
@@ -58,10 +53,12 @@ namespace ECS2D.Rendering
 
             for (int y = 0; y < rows; y++)
             {
+                int atlasY = rows - 1 - y;
+
                 for (int x = 0; x < columns; x++)
                 {
                     int index = y * columns + x;
-                    generatedFrames[index] = new Vector4(stepX, stepY, x * stepX, y * stepY);
+                    generatedFrames[index] = new Vector4(stepX, stepY, x * stepX, atlasY * stepY);
                 }
             }
 
