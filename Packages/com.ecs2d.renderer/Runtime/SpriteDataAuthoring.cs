@@ -48,6 +48,7 @@ namespace ECS2D.Rendering
                 };
 
                 AddComponent(entity, data);
+                AddComponent<SpriteCullState>(entity);
                 AddSharedComponent(entity, SpriteSheetRuntime.CreateRenderKey(authoring.SpriteSheet.SheetId));
             }
         }

@@ -75,10 +75,13 @@ namespace ECS2D.Rendering
 
         protected override void OnCreate()
         {
-            allSpriteQuery = GetEntityQuery(ComponentType.ReadOnly<SpriteData>());
+            allSpriteQuery = GetEntityQuery(
+                ComponentType.ReadOnly<SpriteData>(),
+                ComponentType.ReadOnly<SpriteCullState>());
             filteredSpriteQuery = GetEntityQuery(
                 ComponentType.ReadOnly<SpriteData>(),
-                ComponentType.ReadOnly<SpriteSheetRenderKey>());
+                ComponentType.ReadOnly<SpriteSheetRenderKey>(),
+                ComponentType.ReadOnly<SpriteCullState>());
         }
 
         protected override void OnStartRunning()
@@ -129,6 +132,7 @@ namespace ECS2D.Rendering
                 renderedSpriteCount += spriteCount;
                 group.EnsureCapacity(spriteCount);
                 group.ResetCount(spriteCount);
+                group.AdvanceFrame();
 
                 var chunkBaseEntityIndices = filteredSpriteQuery.CalculateBaseEntityIndexArrayAsync(
                     Allocator.TempJob,
@@ -277,21 +281,29 @@ namespace ECS2D.Rendering
 
         private sealed class SpriteRenderGroup : System.IDisposable
         {
+            private const int UploadBufferCount = 3;
+
+            private struct FrameBuffers
+            {
+                public ComputeBuffer TranslationAndRotationBuffer;
+                public ComputeBuffer ScaleBuffer;
+                public ComputeBuffer ColorBuffer;
+                public ComputeBuffer FrameIndexBuffer;
+                public ComputeBuffer ArgsBuffer;
+                public uint[] Args;
+            }
+
             public readonly int SheetId;
             public readonly int CapacityStep;
             public readonly Vector4[] Frames;
             public readonly Bounds Bounds;
             public readonly Material Material;
             public readonly int FrameCount;
-            public ComputeBuffer TranslationAndRotationBuffer;
-            public ComputeBuffer ScaleBuffer;
-            public ComputeBuffer ColorBuffer;
+            private readonly FrameBuffers[] frameBuffers = new FrameBuffers[UploadBufferCount];
             public ComputeBuffer UvBuffer;
-            public ComputeBuffer FrameIndexBuffer;
-            public ComputeBuffer ArgsBuffer;
-            public uint[] Args;
             public int Capacity;
             public int WriteIndex;
+            private int activeFrameBufferIndex;
 
             public SpriteRenderGroup(SpriteSheetDefinition definition)
             {
@@ -313,7 +325,6 @@ namespace ECS2D.Rendering
 
                 CreateBuffers(math.max(1, definition.InitialCapacity));
                 UploadUvData();
-                BindBuffers();
             }
 
             public void ResetCount(int count = 0)
@@ -333,16 +344,21 @@ namespace ECS2D.Rendering
             }
 
             public NativeArray<float4> BeginTranslationAndRotationWrite(int count)
-                => TranslationAndRotationBuffer.BeginWrite<float4>(0, count);
+                => frameBuffers[activeFrameBufferIndex].TranslationAndRotationBuffer.BeginWrite<float4>(0, count);
 
             public NativeArray<float> BeginScaleWrite(int count)
-                => ScaleBuffer.BeginWrite<float>(0, count);
+                => frameBuffers[activeFrameBufferIndex].ScaleBuffer.BeginWrite<float>(0, count);
 
             public NativeArray<float4> BeginColorWrite(int count)
-                => ColorBuffer.BeginWrite<float4>(0, count);
+                => frameBuffers[activeFrameBufferIndex].ColorBuffer.BeginWrite<float4>(0, count);
 
             public NativeArray<int> BeginFrameIndexWrite(int count)
-                => FrameIndexBuffer.BeginWrite<int>(0, count);
+                => frameBuffers[activeFrameBufferIndex].FrameIndexBuffer.BeginWrite<int>(0, count);
+
+            public void AdvanceFrame()
+            {
+                activeFrameBufferIndex = (activeFrameBufferIndex + 1) % UploadBufferCount;
+            }
 
             public void EndWrite()
             {
@@ -351,13 +367,15 @@ namespace ECS2D.Rendering
                     return;
                 }
 
-                TranslationAndRotationBuffer.EndWrite<float4>(WriteIndex);
-                ScaleBuffer.EndWrite<float>(WriteIndex);
-                ColorBuffer.EndWrite<float4>(WriteIndex);
-                FrameIndexBuffer.EndWrite<int>(WriteIndex);
+                ref FrameBuffers activeFrameBuffers = ref frameBuffers[activeFrameBufferIndex];
 
-                Args[1] = (uint)WriteIndex;
-                ArgsBuffer.SetData(Args);
+                activeFrameBuffers.TranslationAndRotationBuffer.EndWrite<float4>(WriteIndex);
+                activeFrameBuffers.ScaleBuffer.EndWrite<float>(WriteIndex);
+                activeFrameBuffers.ColorBuffer.EndWrite<float4>(WriteIndex);
+                activeFrameBuffers.FrameIndexBuffer.EndWrite<int>(WriteIndex);
+
+                activeFrameBuffers.Args[1] = (uint)WriteIndex;
+                activeFrameBuffers.ArgsBuffer.SetData(activeFrameBuffers.Args);
             }
 
             public void Draw(Mesh mesh)
@@ -367,17 +385,18 @@ namespace ECS2D.Rendering
                     return;
                 }
 
-                Graphics.DrawMeshInstancedIndirect(mesh, 0, Material, Bounds, ArgsBuffer);
+                BindBuffers(frameBuffers[activeFrameBufferIndex]);
+                Graphics.DrawMeshInstancedIndirect(mesh, 0, Material, Bounds, frameBuffers[activeFrameBufferIndex].ArgsBuffer);
             }
 
             public void Dispose()
             {
-                ReleaseBuffer(ref TranslationAndRotationBuffer);
-                ReleaseBuffer(ref ScaleBuffer);
-                ReleaseBuffer(ref ColorBuffer);
+                for (int i = 0; i < frameBuffers.Length; i++)
+                {
+                    ReleaseFrameBuffers(ref frameBuffers[i]);
+                }
+
                 ReleaseBuffer(ref UvBuffer);
-                ReleaseBuffer(ref FrameIndexBuffer);
-                ReleaseBuffer(ref ArgsBuffer);
 
                 if (Material != null)
                 {
@@ -388,34 +407,22 @@ namespace ECS2D.Rendering
             private void CreateBuffers(int capacity)
             {
                 Capacity = capacity;
-                Args = new uint[5] { 6, 0, 0, 0, 0 };
+                for (int i = 0; i < frameBuffers.Length; i++)
+                {
+                    frameBuffers[i] = CreateFrameBuffers(capacity);
+                }
 
-                TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
-                ScaleBuffer = new ComputeBuffer(capacity, sizeof(float), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
-                ColorBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
-                FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
                 UvBuffer = new ComputeBuffer(math.max(1, FrameCount), 16);
-                ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
             }
 
             private void RecreateBuffers(int capacity)
             {
-                ReleaseBuffer(ref TranslationAndRotationBuffer);
-                ReleaseBuffer(ref ScaleBuffer);
-                ReleaseBuffer(ref ColorBuffer);
-                ReleaseBuffer(ref FrameIndexBuffer);
-                ReleaseBuffer(ref ArgsBuffer);
-
                 Capacity = capacity;
-                Args = new uint[5] { 6, 0, 0, 0, 0 };
-
-                TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
-                ScaleBuffer = new ComputeBuffer(capacity, sizeof(float), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
-                ColorBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
-                FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
-                ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
-
-                BindBuffers();
+                for (int i = 0; i < frameBuffers.Length; i++)
+                {
+                    ReleaseFrameBuffers(ref frameBuffers[i]);
+                    frameBuffers[i] = CreateFrameBuffers(capacity);
+                }
             }
 
             private void UploadUvData()
@@ -426,13 +433,36 @@ namespace ECS2D.Rendering
                 }
             }
 
-            private void BindBuffers()
+            private void BindBuffers(in FrameBuffers buffers)
             {
                 Material.SetBuffer(UvBufferId, UvBuffer);
-                Material.SetBuffer(TranslationAndRotationBufferId, TranslationAndRotationBuffer);
-                Material.SetBuffer(ScaleBufferId, ScaleBuffer);
-                Material.SetBuffer(ColorsBufferId, ColorBuffer);
-                Material.SetBuffer(FrameIndexBufferId, FrameIndexBuffer);
+                Material.SetBuffer(TranslationAndRotationBufferId, buffers.TranslationAndRotationBuffer);
+                Material.SetBuffer(ScaleBufferId, buffers.ScaleBuffer);
+                Material.SetBuffer(ColorsBufferId, buffers.ColorBuffer);
+                Material.SetBuffer(FrameIndexBufferId, buffers.FrameIndexBuffer);
+            }
+
+            private static FrameBuffers CreateFrameBuffers(int capacity)
+            {
+                return new FrameBuffers
+                {
+                    Args = new uint[5] { 6, 0, 0, 0, 0 },
+                    TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
+                    ScaleBuffer = new ComputeBuffer(capacity, sizeof(float), ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
+                    ColorBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
+                    FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
+                    ArgsBuffer = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments)
+                };
+            }
+
+            private static void ReleaseFrameBuffers(ref FrameBuffers buffers)
+            {
+                ReleaseBuffer(ref buffers.TranslationAndRotationBuffer);
+                ReleaseBuffer(ref buffers.ScaleBuffer);
+                ReleaseBuffer(ref buffers.ColorBuffer);
+                ReleaseBuffer(ref buffers.FrameIndexBuffer);
+                ReleaseBuffer(ref buffers.ArgsBuffer);
+                buffers.Args = null;
             }
 
             private static void ReleaseBuffer(ref ComputeBuffer buffer)

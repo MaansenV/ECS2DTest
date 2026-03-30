@@ -76,14 +76,12 @@ namespace ECS2D.Rendering
 
                 AddComponent(entity, new SpriteAnimationState
                 {
-                    CurrentAnimation = startClipBlob.Name,
-                    LastResolvedAnimation = startClipBlob.Name,
                     Time = 0f,
                     PlaybackSpeed = math.max(0f, authoring.PlaybackSpeed),
-                    Playing = authoring.PlayOnStart,
-                    CurrentFrameIndex = 0,
                     CurrentClipIndex = startClipIndex,
-                    Flags = SpriteAnimationState.InitializedFlag
+                    CurrentFrameIndex = 0,
+                    Flags = SpriteAnimationState.InitializedFlag,
+                    Playing = authoring.PlayOnStart ? (byte)1 : (byte)0
                 });
 
                 var spriteDataAuthoring = GetComponent<SpriteDataAuthoring>();
@@ -117,6 +115,7 @@ namespace ECS2D.Rendering
                     SpriteFrameIndex = startFrameIndex,
                     SpriteSheetId = authoring.AnimationSet.SpriteSheet.SheetId
                 });
+                AddComponent<SpriteCullState>(entity);
                 AddSharedComponent(entity, SpriteSheetRuntime.CreateRenderKey(authoring.AnimationSet.SpriteSheet.SheetId));
             }
 

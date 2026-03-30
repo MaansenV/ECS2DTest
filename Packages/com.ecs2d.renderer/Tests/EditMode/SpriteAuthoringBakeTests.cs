@@ -34,10 +34,77 @@ namespace ECS2D.Rendering.Tests
                 var renderKey = world.EntityManager.GetSharedComponent<SpriteSheetRenderKey>(bakedEntity);
 
                 Assert.AreEqual(42, renderKey.SheetId);
+                Assert.IsTrue(world.EntityManager.HasComponent<SpriteCullState>(bakedEntity));
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
+        public void SpriteAnimationAuthoring_BakesResolvedStartClipIndex()
+        {
+            using var world = new World("SpriteAuthoringBakeTests");
+            using var blobAssetStore = new BlobAssetStore();
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var animationSet = ScriptableObject.CreateInstance<SpriteAnimationSetDefinition>();
+            var root = new GameObject("SpriteAnimationAuthoringBakeTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 7);
+                SetField(sheet, "columns", 4);
+                SetField(sheet, "rows", 2);
+                SetField(sheet, "autoGenerateGridFrames", true);
+
+                animationSet.SpriteSheet = sheet;
+                animationSet.Clips.Add(new SpriteAnimationClip
+                {
+                    Name = "Idle",
+                    Row = 0,
+                    StartColumn = 0,
+                    FrameCount = 2,
+                    FrameRate = 2f,
+                    Loop = true
+                });
+                animationSet.Clips.Add(new SpriteAnimationClip
+                {
+                    Name = "Run",
+                    Row = 1,
+                    StartColumn = 1,
+                    FrameCount = 3,
+                    FrameRate = 1f,
+                    Loop = true
+                });
+
+                var authoring = root.AddComponent<SpriteAnimationAuthoring>();
+                authoring.AnimationSet = animationSet;
+                authoring.StartAnimation = "Run";
+                authoring.PlayOnStart = true;
+                authoring.PlaybackSpeed = 1.5f;
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                var bakedEntity = GetBakedEntity(bakingSystem, root);
+                var state = world.EntityManager.GetComponentData<SpriteAnimationState>(bakedEntity);
+                var spriteData = world.EntityManager.GetComponentData<SpriteData>(bakedEntity);
+
+                Assert.AreEqual(1, state.CurrentClipIndex);
+                Assert.AreEqual(0, state.CurrentFrameIndex);
+                Assert.AreEqual(1.5f, state.PlaybackSpeed, 0.0001f);
+                Assert.AreEqual(1, state.Playing);
+                Assert.AreEqual(5, spriteData.SpriteFrameIndex);
+                Assert.IsTrue(world.EntityManager.HasComponent<SpriteCullState>(bakedEntity));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(animationSet);
                 UnityEngine.Object.DestroyImmediate(sheet);
             }
         }

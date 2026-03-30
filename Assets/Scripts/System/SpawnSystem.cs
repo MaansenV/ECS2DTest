@@ -2,6 +2,7 @@ using ECS2D.Rendering;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace Systems
@@ -68,10 +69,34 @@ namespace Systems
             {
                 int row = index / spawnSettings.GridColumns;
                 int col = index % spawnSettings.GridColumns;
+                float3 position = new float3(col * stepX, row * stepY, 0f);
 
                 var entity = state.EntityManager.Instantiate(prefabEntity);
                 var data = state.EntityManager.GetComponentData<SpriteData>(entity);
-                data.TranslationAndRotation = new float4(col * stepX, row * stepY, 0, 0);
+                float rotationRadians = data.TranslationAndRotation.w;
+                quaternion rotation = quaternion.identity;
+                float4x4 worldMatrix = float4x4.TRS(position, quaternion.RotateZ(rotationRadians), new float3(spawnSettings.SpriteSize));
+
+                if (state.EntityManager.HasComponent<LocalTransform>(entity))
+                {
+                    var localTransform = state.EntityManager.GetComponentData<LocalTransform>(entity);
+                    localTransform.Position = position;
+                    localTransform.Scale = spawnSettings.SpriteSize;
+                    rotation = localTransform.Rotation;
+                    state.EntityManager.SetComponentData(entity, localTransform);
+                    worldMatrix = float4x4.TRS(position, rotation, new float3(spawnSettings.SpriteSize));
+                    rotationRadians = math.atan2(worldMatrix.c0.y, worldMatrix.c0.x);
+                }
+
+                if (state.EntityManager.HasComponent<LocalToWorld>(entity))
+                {
+                    state.EntityManager.SetComponentData(entity, new LocalToWorld
+                    {
+                        Value = worldMatrix
+                    });
+                }
+
+                data.TranslationAndRotation = new float4(position, rotationRadians);
                 data.Scale = spawnSettings.SpriteSize;
                 data.Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
                 state.EntityManager.SetComponentData(entity, data);
