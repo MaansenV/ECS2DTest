@@ -36,8 +36,14 @@ Or add it directly to `manifest.json`:
 
 - `SpriteSystem`
 - `SpriteData`
+- `SpriteAnimationSystem`
+- `SpriteAnimationState`
+- `SpriteAnimationSetReference`
 - `EntitiesReferences`
 - `SpriteDataAuthoring`
+- `SpriteAnimationClip`
+- `SpriteAnimationSetDefinition`
+- `SpriteAnimationAuthoring`
 - `EntitiesReferenceAuthoring`
 - Material, shader, and texture used by the renderer
 
@@ -51,9 +57,12 @@ using ECS2D.Rendering;
 
 1. Install the package.
 2. Create or use a prefab with `SpriteDataAuthoring`.
-3. Add `EntitiesReferenceAuthoring` to a scene object.
-4. Assign your prefab in `bulletPrefab`.
-5. Enter Play Mode and let `SpriteSystem` render the ECS sprites.
+3. If you want animation, create a `SpriteAnimationSetDefinition` asset for a grid-based sprite sheet, add `SpriteAnimationAuthoring` to the same prefab, and choose the start clip by name.
+4. Author each clip with `Row`, `StartColumn`, and `FrameCount` so you can keep idle/run/etc. grouped by rows without counting every cell manually.
+5. Add `EntitiesReferenceAuthoring` to a scene object.
+6. Assign your prefab in `bulletPrefab`.
+7. Enter Play Mode and let `SpriteAnimationSystem` update the frame index before `SpriteSystem` renders the ECS sprites.
+8. The repo already includes a `SwordMan` demo prefab wired to `Assets/Resources/SpriteAnimations/SwordManAnimations.asset`.
 
 ## Requirements
 

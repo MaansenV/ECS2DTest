@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e425ab0218e45cf97cd2014e77bee78, type: 3}
+  m_Name: EmojiSheet
+  m_EditorClassIdentifier: 
+  sheetId: 1
+  baseMaterial: {fileID: 2100000, guid: c9ea5b12982bb0f41a1e6930b1ed81db, type: 2}
+  texture: {fileID: 2800000, guid: b9b394a6684e48647b979e89500c6fee, type: 3}
+  worldBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 500, y: 500, z: 500}
+  initialCapacity: 256
+  capacityStep: 256
+  autoGenerateGridFrames: 1
+  columns: 4
+  rows: 4
+  frames:
+  - {x: 0.25, y: 0.25, z: 0, w: 0}
+  - {x: 0.25, y: 0.25, z: 0.25, w: 0}
+  - {x: 0.25, y: 0.25, z: 0.5, w: 0}
+  - {x: 0.25, y: 0.25, z: 0.75, w: 0}
+  - {x: 0.25, y: 0.25, z: 0, w: 0.25}
+  - {x: 0.25, y: 0.25, z: 0.25, w: 0.25}
+  - {x: 0.25, y: 0.25, z: 0.5, w: 0.25}
+  - {x: 0.25, y: 0.25, z: 0.75, w: 0.25}
+  - {x: 0.25, y: 0.25, z: 0, w: 0.5}
+  - {x: 0.25, y: 0.25, z: 0.25, w: 0.5}
+  - {x: 0.25, y: 0.25, z: 0.5, w: 0.5}
+  - {x: 0.25, y: 0.25, z: 0.75, w: 0.5}
+  - {x: 0.25, y: 0.25, z: 0, w: 0.75}
+  - {x: 0.25, y: 0.25, z: 0.25, w: 0.75}
+  - {x: 0.25, y: 0.25, z: 0.5, w: 0.75}
+  - {x: 0.25, y: 0.25, z: 0.75, w: 0.75}

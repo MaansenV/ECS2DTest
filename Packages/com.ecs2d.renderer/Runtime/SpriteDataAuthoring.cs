@@ -8,11 +8,11 @@ namespace ECS2D.Rendering
     {
         public SpriteSheetDefinition SpriteSheet;
         public int SpriteFrameIndex;
-        public float4 TranslationAndRotation;
-        public float Scale = 0.3f;
+        public float BaseScale = 1f;
         public float4 Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
+        public float RotationOffsetDegrees;
 
-        class Baker : Baker<SpriteDataAuthoring>
+        private class SpriteDataAuthoringBaker : Baker<SpriteDataAuthoring>
         {
             public override void Bake(SpriteDataAuthoring authoring)
             {
@@ -22,20 +22,34 @@ namespace ECS2D.Rendering
                     return;
                 }
 
-                var entity = GetEntity(TransformUsageFlags.None);
+                DependsOn(authoring.transform);
+                DependsOn(authoring.SpriteSheet);
+
+                Vector3 lossyScale = authoring.transform.lossyScale;
+                if (math.abs(lossyScale.x - lossyScale.y) > 0.0001f)
+                {
+                    Debug.LogWarning($"{nameof(SpriteDataAuthoring)} on '{authoring.name}' uses non-uniform scale. The renderer will use X scale for a uniform sprite size.");
+                }
+
+                var entity = GetEntity(TransformUsageFlags.Dynamic);
                 int frameCount = math.max(1, authoring.SpriteSheet.FrameCount);
                 int spriteFrameIndex = math.clamp(authoring.SpriteFrameIndex, 0, frameCount - 1);
+                float rotationRadians = math.radians(authoring.transform.eulerAngles.z + authoring.RotationOffsetDegrees);
+                float scale = authoring.BaseScale * lossyScale.x;
+                Vector3 position = authoring.transform.position;
 
                 var data = new SpriteData
                 {
-                    TranslationAndRotation = authoring.TranslationAndRotation,
-                    Scale = authoring.Scale,
+                    TranslationAndRotation = new float4(position.x, position.y, position.z, rotationRadians),
+                    Scale = scale,
                     Color = authoring.Color,
                     SpriteFrameIndex = spriteFrameIndex,
                     SpriteSheetId = authoring.SpriteSheet.SheetId
                 };
 
                 AddComponent(entity, data);
+                AddComponent<SpriteCullState>(entity);
+                AddSharedComponent(entity, SpriteSheetRuntime.CreateRenderKey(authoring.SpriteSheet.SheetId));
             }
         }
     }

@@ -23,6 +23,9 @@ namespace ECS2D.Rendering
         public Bounds WorldBounds => worldBounds;
         public int InitialCapacity => Mathf.Max(1, initialCapacity);
         public int CapacityStep => Mathf.Max(1, capacityStep);
+        public bool AutoGenerateGridFrames => autoGenerateGridFrames;
+        public int Columns => Mathf.Max(1, columns);
+        public int Rows => Mathf.Max(1, rows);
         public int FrameCount => Frames.Length;
         public Vector4[] Frames => GetFrames();
 
@@ -38,15 +41,7 @@ namespace ECS2D.Rendering
                 return frames;
             }
 
-            int safeColumns = Mathf.Max(1, columns);
-            int safeRows = Mathf.Max(1, rows);
-            int expectedFrameCount = safeColumns * safeRows;
-
-            if (frames == null || frames.Length != expectedFrameCount)
-            {
-                frames = BuildGridFrames(safeColumns, safeRows);
-            }
-
+            frames = BuildGridFrames(Columns, Rows);
             return frames;
         }
 
@@ -58,10 +53,12 @@ namespace ECS2D.Rendering
 
             for (int y = 0; y < rows; y++)
             {
+                int atlasY = rows - 1 - y;
+
                 for (int x = 0; x < columns; x++)
                 {
                     int index = y * columns + x;
-                    generatedFrames[index] = new Vector4(stepX, stepY, x * stepX, y * stepY);
+                    generatedFrames[index] = new Vector4(stepX, stepY, x * stepX, atlasY * stepY);
                 }
             }
 
@@ -82,6 +79,10 @@ namespace ECS2D.Rendering
             {
                 worldBounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
             }
+
+#if UNITY_EDITOR
+            SpriteSheetDatabase.RefreshCache();
+#endif
         }
     }
 }

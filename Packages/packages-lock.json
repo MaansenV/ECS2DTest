@@ -1,5 +1,16 @@
 {
   "dependencies": {
+    "com.ecs2d.renderer": {
+      "version": "file:com.ecs2d.renderer",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.burst": "1.8.23",
+        "com.unity.collections": "2.6.2",
+        "com.unity.entities": "1.4.2",
+        "com.unity.mathematics": "1.3.2"
+      }
+    },
     "com.tonymax.nsprites": {
       "version": "https://github.com/Antoshidza/NSprites.git",
       "depth": 0,

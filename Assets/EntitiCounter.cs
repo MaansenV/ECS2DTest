@@ -8,7 +8,7 @@ public class EntitiCounter : MonoBehaviour
 
     void Start()
     {
-        Application.targetFrameRate = 120;
+        Application.targetFrameRate = 500;
     }
 
     // Update is called once per frame
@@ -16,13 +16,5 @@ public class EntitiCounter : MonoBehaviour
     {
     }
 
-    public void CountEntities()
-    {
-        var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-        //Query all entities with the SpriteData component
-        var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<SpriteData>());
-        //Get the number of entities in the query
-        int entityCount = query.CalculateEntityCount();
-        text.SetText(entityCount.ToString());
-    }
+
 }
