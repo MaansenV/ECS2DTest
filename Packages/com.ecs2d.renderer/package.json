@@ -1,0 +1,13 @@
+{
+  "name": "com.ecs2d.renderer",
+  "version": "1.0.0",
+  "displayName": "ECS2D Rendering",
+  "description": "Reusable ECS sprite rendering core for Unity projects.",
+  "unity": "6000.3",
+  "dependencies": {
+    "com.unity.burst": "1.8.23",
+    "com.unity.collections": "2.6.2",
+    "com.unity.entities": "1.4.2",
+    "com.unity.mathematics": "1.3.2"
+  }
+}
