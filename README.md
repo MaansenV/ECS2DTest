@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Reusable 2D sprite rendering for Unity ECS as a UPM package.
+  Unity ECS 2D sprite rendering with animation, culling, and UPM-based reuse.
 </p>
 
 <p align="center">
@@ -16,13 +16,13 @@
 
 ## Install
 
-Add this package in Unity Package Manager:
+Unity Package Manager Git URL:
 
 ```text
 https://github.com/MaansenV/ECS2DTest.git?path=/Packages/com.ecs2d.renderer
 ```
 
-Or add it directly to `manifest.json`:
+Or in `manifest.json`:
 
 ```json
 {
@@ -32,20 +32,21 @@ Or add it directly to `manifest.json`:
 }
 ```
 
-## What you get
+## What it does
 
-- `SpriteSystem`
-- `SpriteData`
-- `SpriteAnimationSystem`
-- `SpriteAnimationState`
-- `SpriteAnimationSetReference`
-- `EntitiesReferences`
+- Renders ECS sprites through `SpriteSystem`
+- Supports grid-based sprite-sheet animation through `SpriteAnimationSystem`
+- Supports orthographic frustum culling through `SpriteCullingSystem`
+- Ships as a reusable package in `Packages/com.ecs2d.renderer`
+
+## Core assets and types
+
+- `SpriteSheetDefinition`
 - `SpriteDataAuthoring`
-- `SpriteAnimationClip`
 - `SpriteAnimationSetDefinition`
 - `SpriteAnimationAuthoring`
+- `SpriteCullingSettingsAuthoring`
 - `EntitiesReferenceAuthoring`
-- Material, shader, and texture used by the renderer
 
 Namespace:
 
@@ -53,24 +54,28 @@ Namespace:
 using ECS2D.Rendering;
 ```
 
-## How to use
+## Quick usage
 
 1. Install the package.
-2. Create or use a prefab with `SpriteDataAuthoring`.
-3. If you want animation, create a `SpriteAnimationSetDefinition` asset for a grid-based sprite sheet, add `SpriteAnimationAuthoring` to the same prefab, and choose the start clip by name.
-4. Author each clip with `Row`, `StartColumn`, and `FrameCount` so you can keep idle/run/etc. grouped by rows without counting every cell manually.
-5. Add `EntitiesReferenceAuthoring` to a scene object.
-6. Assign your prefab in `bulletPrefab`.
-7. Enter Play Mode and let `SpriteAnimationSystem` update the frame index before `SpriteSystem` renders the ECS sprites.
-8. The repo already includes a `SwordMan` demo prefab wired to `Assets/Resources/SpriteAnimations/SwordManAnimations.asset`.
+2. Create a `SpriteSheetDefinition` for your material and texture.
+3. Add `SpriteDataAuthoring` to a prefab or GameObject and assign that sheet.
+4. If you want animation, create a `SpriteAnimationSetDefinition` and add `SpriteAnimationAuthoring`.
+5. If you want runtime culling control, add `SpriteCullingSettingsAuthoring` in the scene.
+6. Enter Play Mode and let the ECS systems animate, cull, and render your sprites.
+
+## Included examples
+
+- `Assets/Scenes/SampleScene.unity`
+- `Assets/Scenes/SpawnBenchmark.unity`
+- `Assets/Prefabs/SwordMan/SwordMan.prefab`
 
 ## Requirements
 
 - Unity `6000.3.10f1` or newer
 - `com.unity.entities` `1.4.x`
 
-## Package Path
+## More details
 
-```text
-Packages/com.ecs2d.renderer
-```
+Detailed package documentation lives in:
+
+`Packages/com.ecs2d.renderer/README.md`
