@@ -1,4 +1,5 @@
 using ECS2D.Rendering;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -18,12 +19,19 @@ namespace Authoring
         {
             SpriteCullingRuntime.SetOverride(enabled);
 
-            if (TryGetOrCreateSettingsEntity(out var entityManager, out var settingsEntity))
+            if (TryGetExistingSettingsEntities(out var entityManager, out var settingsEntities))
             {
-                entityManager.SetComponentData(settingsEntity, new SpriteCullingSettings
+                var settingsData = new SpriteCullingSettings
                 {
                     Enabled = enabled ? (byte)1 : (byte)0
-                });
+                };
+
+                for (int i = 0; i < settingsEntities.Length; i++)
+                {
+                    entityManager.SetComponentData(settingsEntities[i], settingsData);
+                }
+
+                settingsEntities.Dispose();
             }
         }
 
@@ -50,18 +58,25 @@ namespace Authoring
                 return overrideEnabled;
             }
 
-            if (!TryGetOrCreateSettingsEntity(out var entityManager, out var settingsEntity))
+            if (!TryGetExistingSettingsEntities(out var entityManager, out var settingsEntities))
             {
                 return true;
             }
 
-            return entityManager.GetComponentData<SpriteCullingSettings>(settingsEntity).Enabled != 0;
+            try
+            {
+                return entityManager.GetComponentData<SpriteCullingSettings>(settingsEntities[0]).Enabled != 0;
+            }
+            finally
+            {
+                settingsEntities.Dispose();
+            }
         }
 
-        private static bool TryGetOrCreateSettingsEntity(out EntityManager entityManager, out Entity settingsEntity)
+        private static bool TryGetExistingSettingsEntities(out EntityManager entityManager, out NativeArray<Entity> settingsEntities)
         {
             entityManager = default;
-            settingsEntity = Entity.Null;
+            settingsEntities = default;
 
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null || !world.IsCreated)
@@ -76,15 +91,10 @@ namespace Authoring
             {
                 if (query.IsEmptyIgnoreFilter)
                 {
-                    settingsEntity = entityManager.CreateEntity(typeof(SpriteCullingSettings));
-                    entityManager.SetComponentData(settingsEntity, new SpriteCullingSettings
-                    {
-                        Enabled = 1
-                    });
-                    return true;
+                    return false;
                 }
 
-                settingsEntity = query.GetSingletonEntity();
+                settingsEntities = query.ToEntityArray(Allocator.Temp);
                 return true;
             }
             finally

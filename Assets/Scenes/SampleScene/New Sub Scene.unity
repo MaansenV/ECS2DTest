@@ -184,7 +184,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1db4f36f2ce74566b5a0966f26ffd0c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.SpriteCullingSettingsAuthoring
-  CullingEnabled: 1
+  CullingEnabled: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
