@@ -17,7 +17,7 @@ MonoBehaviour:
   - Name: Idle
     Row: 0
     StartColumn: 0
-    FrameCount: 6
+    FrameCount: 4
     FrameRate: 6
     Loop: 1
     PingPong: 0

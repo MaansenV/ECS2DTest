@@ -5,6 +5,7 @@
     "ECS2D.Rendering",
     "Unity.Collections",
     "Unity.Entities",
+    "Unity.Entities.Hybrid",
     "Unity.Mathematics"
   ],
   "includePlatforms": [

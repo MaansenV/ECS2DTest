@@ -1,72 +1,83 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace ECS2D.Rendering
 {
     [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.Editor)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     [UpdateBefore(typeof(SpriteSystem))]
-    public partial class SpriteAnimationSystem : SystemBase
+    public partial struct SpriteAnimationSystem : ISystem
     {
-        protected override void OnUpdate()
+        [BurstCompile]
+        private partial struct UpdateSpriteAnimationJob : IJobEntity
         {
-            float deltaTime = SystemAPI.Time.DeltaTime;
+            public float DeltaTime;
 
-            foreach (var (stateRW, setRefRO, spriteDataRW) in SystemAPI.Query<RefRW<SpriteAnimationState>, RefRO<SpriteAnimationSetReference>, RefRW<SpriteData>>())
+            private void Execute(ref SpriteAnimationState state, in SpriteAnimationSetReference setRef, ref SpriteData spriteData)
             {
-                ref SpriteAnimationState state = ref stateRW.ValueRW;
-                BlobAssetReference<SpriteAnimationSetBlob> animationSetReference = setRefRO.ValueRO.Value;
+                BlobAssetReference<SpriteAnimationSetBlob> animationSetReference = setRef.Value;
                 if (!animationSetReference.IsCreated)
                 {
-                    continue;
+                    return;
                 }
 
                 ref SpriteAnimationSetBlob animationSet = ref animationSetReference.Value;
                 if (animationSet.Clips.Length == 0)
                 {
-                    continue;
+                    return;
                 }
 
-                int clipIndex = 0;
-                bool clipFound = SpriteAnimationSetBlobUtility.TryGetClipIndex(ref animationSet, in state.CurrentAnimation, out clipIndex);
-
-                if ((state.Flags & SpriteAnimationState.InitializedFlag) == 0)
+                bool wasInitialized = (state.Flags & SpriteAnimationState.InitializedFlag) != 0;
+                if (!wasInitialized)
                 {
                     state.Flags |= SpriteAnimationState.InitializedFlag;
                     state.Time = 0f;
                     state.CurrentFrameIndex = 0;
+                }
 
-                    if (!clipFound)
+                bool needsResolve = !wasInitialized
+                    || state.CurrentClipIndex < 0
+                    || state.CurrentClipIndex >= animationSet.Clips.Length
+                    || !state.LastResolvedAnimation.Equals(state.CurrentAnimation);
+
+                if (needsResolve)
+                {
+                    if (!SpriteAnimationSetBlobUtility.TryGetClipIndex(ref animationSet, in state.CurrentAnimation, out int clipIndex))
                     {
                         clipIndex = 0;
                         state.CurrentAnimation = animationSet.Clips[0].Name;
+                        state.Time = 0f;
+                        state.CurrentFrameIndex = 0;
                     }
-                }
-                else if (!clipFound)
-                {
-                    clipIndex = 0;
-                    state.Time = 0f;
-                    state.CurrentFrameIndex = 0;
-                    state.CurrentAnimation = animationSet.Clips[0].Name;
+
+                    state.CurrentClipIndex = clipIndex;
+                    state.LastResolvedAnimation = state.CurrentAnimation;
                 }
 
-                ref readonly SpriteAnimationClipBlob clip = ref animationSet.Clips[clipIndex];
+                ref readonly SpriteAnimationClipBlob clip = ref animationSet.Clips[state.CurrentClipIndex];
                 float playbackSpeed = math.max(0f, state.PlaybackSpeed);
 
                 if (state.Playing)
                 {
-                    state.Time += deltaTime;
+                    state.Time += DeltaTime;
                 }
 
                 int clipFrameIndex = SpriteAnimationSetBlobUtility.EvaluateFrameIndex(in clip, state.Time, playbackSpeed);
                 int spriteFrameIndex = SpriteAnimationSetBlobUtility.ResolveSpriteFrameIndex(ref animationSet, in clip, clipFrameIndex);
 
                 state.CurrentFrameIndex = clipFrameIndex;
-                spriteDataRW.ValueRW.SpriteSheetId = animationSet.SpriteSheetId;
-                spriteDataRW.ValueRW.SpriteFrameIndex = spriteFrameIndex;
+                spriteData.SpriteFrameIndex = spriteFrameIndex;
             }
+        }
+
+        public void OnUpdate(ref SystemState state)
+        {
+            state.Dependency = new UpdateSpriteAnimationJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime
+            }.ScheduleParallel(state.Dependency);
         }
     }
 }

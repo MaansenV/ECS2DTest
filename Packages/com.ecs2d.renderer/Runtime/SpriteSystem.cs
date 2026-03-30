@@ -1,6 +1,9 @@
 using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -10,12 +13,12 @@ namespace ECS2D.Rendering
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class SpriteSystem : SystemBase
     {
-        private EntityQuery spriteQuery;
+        private EntityQuery allSpriteQuery;
+        private EntityQuery filteredSpriteQuery;
         private readonly Dictionary<int, SpriteRenderGroup> renderGroups = new Dictionary<int, SpriteRenderGroup>();
-        private readonly Dictionary<int, int> sheetCounts = new Dictionary<int, int>();
-        private readonly HashSet<int> missingSheetWarnings = new HashSet<int>();
         private Mesh quadMesh;
         private bool hasLoggedMissingDefinitions;
+        private bool hasLoggedUnmatchedSprites;
         private int lastDefinitionsSignature = int.MinValue;
 
         private static readonly int TranslationAndRotationBufferId = Shader.PropertyToID("translationAndRotationBuffer");
@@ -24,9 +27,58 @@ namespace ECS2D.Rendering
         private static readonly int UvBufferId = Shader.PropertyToID("uvBuffer");
         private static readonly int FrameIndexBufferId = Shader.PropertyToID("frameIndexBuffer");
 
+        [BurstCompile]
+        private struct UploadSpriteDataJob : IJobChunk
+        {
+            [ReadOnly] public ComponentTypeHandle<SpriteData> SpriteDataType;
+            [ReadOnly]
+            [DeallocateOnJobCompletion]
+            public NativeArray<int> ChunkBaseEntityIndices;
+            [NativeDisableParallelForRestriction] public NativeArray<float4> TranslationAndRotationOutput;
+            [NativeDisableParallelForRestriction] public NativeArray<float> ScaleOutput;
+            [NativeDisableParallelForRestriction] public NativeArray<float4> ColorOutput;
+            [NativeDisableParallelForRestriction] public NativeArray<int> FrameIndexOutput;
+            public int MaxFrameIndex;
+
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
+            {
+                var spriteDataArray = chunk.GetNativeArray(ref SpriteDataType);
+                int baseEntityIndex = ChunkBaseEntityIndices[unfilteredChunkIndex];
+
+                if (!useEnabledMask)
+                {
+                    for (int i = 0; i < spriteDataArray.Length; i++)
+                    {
+                        WriteSprite(spriteDataArray[i], baseEntityIndex + i);
+                    }
+
+                    return;
+                }
+
+                int enabledEntityIndex = 0;
+                var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (enumerator.NextEntityIndex(out int i))
+                {
+                    WriteSprite(spriteDataArray[i], baseEntityIndex + enabledEntityIndex);
+                    enabledEntityIndex++;
+                }
+            }
+
+            private void WriteSprite(in SpriteData spriteData, int outputIndex)
+            {
+                TranslationAndRotationOutput[outputIndex] = spriteData.TranslationAndRotation;
+                ScaleOutput[outputIndex] = spriteData.Scale;
+                ColorOutput[outputIndex] = spriteData.Color;
+                FrameIndexOutput[outputIndex] = math.clamp(spriteData.SpriteFrameIndex, 0, MaxFrameIndex);
+            }
+        }
+
         protected override void OnCreate()
         {
-            spriteQuery = GetEntityQuery(ComponentType.ReadOnly<SpriteData>());
+            allSpriteQuery = GetEntityQuery(ComponentType.ReadOnly<SpriteData>());
+            filteredSpriteQuery = GetEntityQuery(
+                ComponentType.ReadOnly<SpriteData>(),
+                ComponentType.ReadOnly<SpriteSheetRenderKey>());
         }
 
         protected override void OnStartRunning()
@@ -53,87 +105,66 @@ namespace ECS2D.Rendering
                 return;
             }
 
-            int spriteCount = spriteQuery.CalculateEntityCount();
-            if (spriteCount == 0)
+            int totalSpriteCount = allSpriteQuery.CalculateEntityCount();
+            if (totalSpriteCount == 0)
             {
                 return;
             }
 
-            var spriteDataArray = spriteQuery.ToComponentDataArray<SpriteData>(Allocator.TempJob);
-            try
+            filteredSpriteQuery.ResetFilter();
+            var spriteDataType = GetComponentTypeHandle<SpriteData>(true);
+            int renderedSpriteCount = 0;
+
+            foreach (var group in renderGroups.Values)
             {
-                sheetCounts.Clear();
-                missingSheetWarnings.Clear();
+                filteredSpriteQuery.SetSharedComponentFilter(SpriteSheetRuntime.CreateRenderKey(group.SheetId));
+                int spriteCount = filteredSpriteQuery.CalculateEntityCount();
 
-                for (int i = 0; i < spriteDataArray.Length; i++)
-                {
-                    var spriteData = spriteDataArray[i];
-                    if (!sheetCounts.TryGetValue(spriteData.SpriteSheetId, out int count))
-                    {
-                        sheetCounts[spriteData.SpriteSheetId] = 1;
-                    }
-                    else
-                    {
-                        sheetCounts[spriteData.SpriteSheetId] = count + 1;
-                    }
-                }
-
-                foreach (var group in renderGroups.Values)
+                if (spriteCount == 0)
                 {
                     group.ResetCount();
+                    continue;
                 }
 
-                foreach (var sheetCount in sheetCounts)
+                renderedSpriteCount += spriteCount;
+                group.EnsureCapacity(spriteCount);
+                group.ResetCount(spriteCount);
+
+                var chunkBaseEntityIndices = filteredSpriteQuery.CalculateBaseEntityIndexArrayAsync(
+                    Allocator.TempJob,
+                    Dependency,
+                    out JobHandle chunkBaseEntityIndicesHandle);
+
+                var uploadHandle = new UploadSpriteDataJob
                 {
-                    if (!renderGroups.TryGetValue(sheetCount.Key, out var group))
-                    {
-                        if (missingSheetWarnings.Add(sheetCount.Key))
-                        {
-                            Debug.LogWarning($"SpriteSystem found SpriteData using SpriteSheetId {sheetCount.Key}, but no matching SpriteSheetDefinition is loaded.");
-                        }
+                    SpriteDataType = spriteDataType,
+                    ChunkBaseEntityIndices = chunkBaseEntityIndices,
+                    TranslationAndRotationOutput = group.BeginTranslationAndRotationWrite(spriteCount),
+                    ScaleOutput = group.BeginScaleWrite(spriteCount),
+                    ColorOutput = group.BeginColorWrite(spriteCount),
+                    FrameIndexOutput = group.BeginFrameIndexWrite(spriteCount),
+                    MaxFrameIndex = math.max(0, group.FrameCount - 1)
+                }.ScheduleParallel(filteredSpriteQuery, chunkBaseEntityIndicesHandle);
 
-                        continue;
-                    }
+                uploadHandle.Complete();
+                group.EndWrite();
+                group.Draw(GetQuadMesh());
+            }
 
-                    group.EnsureCapacity(sheetCount.Value);
-                    group.ResetCount();
-                }
+            filteredSpriteQuery.ResetFilter();
+            Dependency = default;
 
-                for (int i = 0; i < spriteDataArray.Length; i++)
+            if (renderedSpriteCount < totalSpriteCount)
+            {
+                if (!hasLoggedUnmatchedSprites)
                 {
-                    var spriteData = spriteDataArray[i];
-                    if (!renderGroups.TryGetValue(spriteData.SpriteSheetId, out var group))
-                    {
-                        continue;
-                    }
-
-                    if (group.FrameCount == 0)
-                    {
-                        continue;
-                    }
-
-                    int writeIndex = group.WriteIndex++;
-                    int frameIndex = math.clamp(spriteData.SpriteFrameIndex, 0, group.FrameCount - 1);
-                    group.TranslationAndRotationData[writeIndex] = spriteData.TranslationAndRotation;
-                    group.ScaleData[writeIndex] = spriteData.Scale;
-                    group.ColorData[writeIndex] = spriteData.Color;
-                    group.FrameIndexData[writeIndex] = frameIndex;
-                }
-
-                foreach (var group in renderGroups.Values)
-                {
-                    if (group.WriteIndex == 0)
-                    {
-                        continue;
-                    }
-
-                    group.Upload();
-                    Graphics.DrawMeshInstancedIndirect(GetQuadMesh(), 0, group.Material, group.Bounds, group.ArgsBuffer);
+                    Debug.LogWarning("SpriteSystem found SpriteData entities that could not be rendered because they are missing SpriteSheetRenderKey or a matching SpriteSheetDefinition.");
+                    hasLoggedUnmatchedSprites = true;
                 }
             }
-            finally
+            else
             {
-                spriteDataArray.Dispose();
+                hasLoggedUnmatchedSprites = false;
             }
         }
 
@@ -259,10 +290,6 @@ namespace ECS2D.Rendering
             public ComputeBuffer FrameIndexBuffer;
             public ComputeBuffer ArgsBuffer;
             public uint[] Args;
-            public float4[] TranslationAndRotationData;
-            public float[] ScaleData;
-            public float4[] ColorData;
-            public int[] FrameIndexData;
             public int Capacity;
             public int WriteIndex;
 
@@ -289,9 +316,9 @@ namespace ECS2D.Rendering
                 BindBuffers();
             }
 
-            public void ResetCount()
+            public void ResetCount(int count = 0)
             {
-                WriteIndex = 0;
+                WriteIndex = count;
             }
 
             public void EnsureCapacity(int requiredCount)
@@ -305,15 +332,42 @@ namespace ECS2D.Rendering
                 RecreateBuffers(nextCapacity);
             }
 
-            public void Upload()
+            public NativeArray<float4> BeginTranslationAndRotationWrite(int count)
+                => TranslationAndRotationBuffer.BeginWrite<float4>(0, count);
+
+            public NativeArray<float> BeginScaleWrite(int count)
+                => ScaleBuffer.BeginWrite<float>(0, count);
+
+            public NativeArray<float4> BeginColorWrite(int count)
+                => ColorBuffer.BeginWrite<float4>(0, count);
+
+            public NativeArray<int> BeginFrameIndexWrite(int count)
+                => FrameIndexBuffer.BeginWrite<int>(0, count);
+
+            public void EndWrite()
             {
-                TranslationAndRotationBuffer.SetData(TranslationAndRotationData, 0, 0, WriteIndex);
-                ScaleBuffer.SetData(ScaleData, 0, 0, WriteIndex);
-                ColorBuffer.SetData(ColorData, 0, 0, WriteIndex);
-                FrameIndexBuffer.SetData(FrameIndexData, 0, 0, WriteIndex);
+                if (WriteIndex == 0)
+                {
+                    return;
+                }
+
+                TranslationAndRotationBuffer.EndWrite<float4>(WriteIndex);
+                ScaleBuffer.EndWrite<float>(WriteIndex);
+                ColorBuffer.EndWrite<float4>(WriteIndex);
+                FrameIndexBuffer.EndWrite<int>(WriteIndex);
 
                 Args[1] = (uint)WriteIndex;
                 ArgsBuffer.SetData(Args);
+            }
+
+            public void Draw(Mesh mesh)
+            {
+                if (WriteIndex == 0)
+                {
+                    return;
+                }
+
+                Graphics.DrawMeshInstancedIndirect(mesh, 0, Material, Bounds, ArgsBuffer);
             }
 
             public void Dispose()
@@ -334,16 +388,12 @@ namespace ECS2D.Rendering
             private void CreateBuffers(int capacity)
             {
                 Capacity = capacity;
-                TranslationAndRotationData = new float4[capacity];
-                ScaleData = new float[capacity];
-                ColorData = new float4[capacity];
-                FrameIndexData = new int[capacity];
                 Args = new uint[5] { 6, 0, 0, 0, 0 };
 
-                TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16);
-                ScaleBuffer = new ComputeBuffer(capacity, sizeof(float));
-                ColorBuffer = new ComputeBuffer(capacity, 16);
-                FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int));
+                TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+                ScaleBuffer = new ComputeBuffer(capacity, sizeof(float), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+                ColorBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+                FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
                 UvBuffer = new ComputeBuffer(math.max(1, FrameCount), 16);
                 ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
             }
@@ -356,8 +406,15 @@ namespace ECS2D.Rendering
                 ReleaseBuffer(ref FrameIndexBuffer);
                 ReleaseBuffer(ref ArgsBuffer);
 
-                CreateBuffers(capacity);
-                UploadUvData();
+                Capacity = capacity;
+                Args = new uint[5] { 6, 0, 0, 0, 0 };
+
+                TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+                ScaleBuffer = new ComputeBuffer(capacity, sizeof(float), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+                ColorBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+                FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+                ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+
                 BindBuffers();
             }
 

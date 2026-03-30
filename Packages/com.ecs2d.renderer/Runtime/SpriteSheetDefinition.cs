@@ -79,6 +79,10 @@ namespace ECS2D.Rendering
             {
                 worldBounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
             }
+
+#if UNITY_EDITOR
+            SpriteSheetDatabase.RefreshCache();
+#endif
         }
     }
 }

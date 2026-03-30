@@ -6,70 +6,84 @@ namespace ECS2D.Rendering
 {
     public static class SpriteSheetDatabase
     {
-        private static SpriteSheetDefinition[] cachedDefinitions;
+        private static readonly object SyncRoot = new object();
+        private static SpriteSheetDefinition[] cachedDefinitions = Array.Empty<SpriteSheetDefinition>();
+        private static Dictionary<int, SpriteSheetDefinition> cachedDefinitionsById = new Dictionary<int, SpriteSheetDefinition>();
         private static int cachedSignature = int.MinValue;
+        private static bool isLoaded;
+
+        internal static Func<SpriteSheetDefinition[]> DefinitionsLoader = DefaultLoadDefinitions;
 
         public static SpriteSheetDefinition[] Definitions => GetDefinitions();
         public static int DefinitionsSignature => GetDefinitionsSignature();
 
         public static SpriteSheetDefinition[] GetDefinitions()
         {
-            RefreshDefinitionsIfNeeded();
-
+            EnsureLoaded();
             return cachedDefinitions;
         }
 
         public static bool TryGetDefinition(int sheetId, out SpriteSheetDefinition definition)
         {
-            var definitions = GetDefinitions();
-
-            for (int i = 0; i < definitions.Length; i++)
-            {
-                if (definitions[i] != null && definitions[i].SheetId == sheetId)
-                {
-                    definition = definitions[i];
-                    return true;
-                }
-            }
-
-            definition = null;
-            return false;
+            EnsureLoaded();
+            return cachedDefinitionsById.TryGetValue(sheetId, out definition);
         }
 
         public static void RefreshCache()
         {
-            cachedDefinitions = null;
-            cachedSignature = int.MinValue;
+            lock (SyncRoot)
+            {
+                LoadDefinitionsIntoCache();
+            }
         }
 
         public static int GetDefinitionsSignature()
         {
-            RefreshDefinitionsIfNeeded();
+            EnsureLoaded();
             return cachedSignature;
         }
 
-        private static void RefreshDefinitionsIfNeeded()
+        internal static void ResetForTests()
         {
-            var loadedDefinitions = LoadDefinitions();
-            int newSignature = ComputeSignature(loadedDefinitions);
-
-            if (cachedDefinitions == null || cachedSignature != newSignature)
+            lock (SyncRoot)
             {
-                cachedDefinitions = loadedDefinitions;
-                cachedSignature = newSignature;
+                cachedDefinitions = Array.Empty<SpriteSheetDefinition>();
+                cachedDefinitionsById = new Dictionary<int, SpriteSheetDefinition>();
+                cachedSignature = int.MinValue;
+                isLoaded = false;
             }
         }
 
-        private static SpriteSheetDefinition[] LoadDefinitions()
+        private static void EnsureLoaded()
         {
-            var loadedDefinitions = Resources.LoadAll<SpriteSheetDefinition>("SpriteSheets");
+            if (isLoaded)
+            {
+                return;
+            }
 
+            lock (SyncRoot)
+            {
+                if (!isLoaded)
+                {
+                    LoadDefinitionsIntoCache();
+                }
+            }
+        }
+
+        private static void LoadDefinitionsIntoCache()
+        {
+            var loadedDefinitions = DefinitionsLoader?.Invoke() ?? Array.Empty<SpriteSheetDefinition>();
             if (loadedDefinitions == null || loadedDefinitions.Length == 0)
             {
-                return Array.Empty<SpriteSheetDefinition>();
+                cachedDefinitions = Array.Empty<SpriteSheetDefinition>();
+                cachedDefinitionsById = new Dictionary<int, SpriteSheetDefinition>();
+                cachedSignature = ComputeSignature(cachedDefinitions);
+                isLoaded = true;
+                return;
             }
 
             var definitions = new List<SpriteSheetDefinition>(loadedDefinitions.Length);
+            var definitionsById = new Dictionary<int, SpriteSheetDefinition>(loadedDefinitions.Length);
             var seenSheetIds = new HashSet<int>();
 
             foreach (var definition in loadedDefinitions)
@@ -85,10 +99,22 @@ namespace ECS2D.Rendering
                 }
 
                 definitions.Add(definition);
+                definitionsById[definition.SheetId] = definition;
             }
 
             definitions.Sort((left, right) => left.SheetId.CompareTo(right.SheetId));
-            return definitions.ToArray();
+            cachedDefinitions = definitions.ToArray();
+            cachedDefinitionsById = definitionsById;
+            cachedSignature = ComputeSignature(cachedDefinitions);
+            isLoaded = true;
+        }
+
+        private static SpriteSheetDefinition[] DefaultLoadDefinitions()
+        {
+            var loadedDefinitions = Resources.LoadAll<SpriteSheetDefinition>("SpriteSheets");
+            return loadedDefinitions == null || loadedDefinitions.Length == 0
+                ? Array.Empty<SpriteSheetDefinition>()
+                : loadedDefinitions;
         }
 
         private static int ComputeSignature(SpriteSheetDefinition[] definitions)
