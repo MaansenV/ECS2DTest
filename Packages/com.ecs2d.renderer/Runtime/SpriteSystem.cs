@@ -1,28 +1,26 @@
-using Unity.Burst;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace ECS2D.Rendering
 {
+    [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class SpriteSystem : SystemBase
     {
         private EntityQuery spriteQuery;
-        private ComputeBuffer translationAndRotationBuffer;
-        private ComputeBuffer scaleBuffer;
-        private ComputeBuffer colorBuffer;
-        private ComputeBuffer uvBuffer;
-        private ComputeBuffer uvIndexBuffer;
-        private uint[] args;
-        private ComputeBuffer argsBuffer;
-        private int spriteCount;
-        private Material defaultMaterial;
+        private readonly Dictionary<int, SpriteRenderGroup> renderGroups = new Dictionary<int, SpriteRenderGroup>();
+        private readonly Dictionary<int, int> sheetCounts = new Dictionary<int, int>();
+        private readonly HashSet<int> missingSheetWarnings = new HashSet<int>();
         private Mesh quadMesh;
+        private bool hasLoggedMissingDefinitions;
 
-        private const int UV_X_ELEMENTS = 4;
-        private const int UV_Y_ELEMENTS = 4;
+        private static readonly int TranslationAndRotationBufferId = Shader.PropertyToID("translationAndRotationBuffer");
+        private static readonly int ScaleBufferId = Shader.PropertyToID("scaleBuffer");
+        private static readonly int ColorsBufferId = Shader.PropertyToID("colorsBuffer");
+        private static readonly int UvBufferId = Shader.PropertyToID("uvBuffer");
+        private static readonly int FrameIndexBufferId = Shader.PropertyToID("frameIndexBuffer");
 
         protected override void OnCreate()
         {
@@ -31,175 +29,348 @@ namespace ECS2D.Rendering
 
         protected override void OnStartRunning()
         {
-            spriteCount = spriteQuery.CalculateEntityCount() + 1000000;
-
-            // Initialize UV buffer
-            const int uvCount = UV_X_ELEMENTS * UV_Y_ELEMENTS;
-            float4[] uvs = new float4[uvCount];
-            for (int u = 0; u < UV_X_ELEMENTS; u++)
-            {
-                for (int v = 0; v < UV_Y_ELEMENTS; v++)
-                {
-                    int index = v * UV_X_ELEMENTS + u;
-                    uvs[index] = new float4(0.25f, 0.25f, u * 0.25f, v * 0.25f);
-                }
-            }
-
-            uvBuffer = new ComputeBuffer(uvs.Length, 16);
-            uvBuffer.SetData(uvs);
-
-            translationAndRotationBuffer = new ComputeBuffer(spriteCount, 16);
-            scaleBuffer = new ComputeBuffer(spriteCount, sizeof(float));
-            colorBuffer = new ComputeBuffer(spriteCount, 16);
-            uvIndexBuffer = new ComputeBuffer(spriteCount, sizeof(int));
-
-            args = new uint[] { 6, (uint)spriteCount, 0, 0, 0 };
-            argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
-            argsBuffer.SetData(args);
-
-            defaultMaterial = Resources.Load<Material>("Third");
-
-            if (defaultMaterial != null)
-            {
-                int uvBufferId = Shader.PropertyToID("uvBuffer");
-                defaultMaterial.SetBuffer(uvBufferId, uvBuffer);
-
-                int translationAndRotationBufferId = Shader.PropertyToID("translationAndRotationBuffer");
-                defaultMaterial.SetBuffer(translationAndRotationBufferId, translationAndRotationBuffer);
-
-                int scaleBufferId = Shader.PropertyToID("scaleBuffer");
-                defaultMaterial.SetBuffer(scaleBufferId, scaleBuffer);
-
-                int uvIndexBufferId = Shader.PropertyToID("uvIndexBuffer");
-                defaultMaterial.SetBuffer(uvIndexBufferId, uvIndexBuffer);
-
-                int colorsBufferId = Shader.PropertyToID("colorsBuffer");
-                defaultMaterial.SetBuffer(colorsBufferId, colorBuffer);
-            }
-            else
-            {
-                Debug.LogError("Default material could not be loaded.");
-            }
+            BuildRenderGroups();
         }
 
         protected override void OnUpdate()
         {
-            spriteCount = spriteQuery.CalculateEntityCount();
-            if (spriteCount == 0)
-                return;
+            if (renderGroups.Count == 0)
+            {
+                if (!hasLoggedMissingDefinitions)
+                {
+                    Debug.LogWarning("SpriteSystem did not find any SpriteSheetDefinition assets in Resources/SpriteSheets.");
+                    hasLoggedMissingDefinitions = true;
+                }
 
-            var translationAndRotations = new NativeArray<float4>(spriteCount, Allocator.TempJob);
-            var scales = new NativeArray<float>(spriteCount, Allocator.TempJob);
-            var colors = new NativeArray<float4>(spriteCount, Allocator.TempJob);
-            var uvIndices = new NativeArray<int>(spriteCount, Allocator.TempJob);
+                return;
+            }
+
+            int spriteCount = spriteQuery.CalculateEntityCount();
+            if (spriteCount == 0)
+            {
+                return;
+            }
 
             var spriteDataArray = spriteQuery.ToComponentDataArray<SpriteData>(Allocator.TempJob);
-
-            var job = new CollectDataJob
+            try
             {
-                SpriteDataArray = spriteDataArray,
-                TranslationAndRotations = translationAndRotations,
-                Scales = scales,
-                Colors = colors,
-                UVIndices = uvIndices
-            };
+                sheetCounts.Clear();
+                missingSheetWarnings.Clear();
 
-            var handle = job.Schedule(spriteCount, 64, Dependency);
-            handle.Complete();
+                for (int i = 0; i < spriteDataArray.Length; i++)
+                {
+                    var spriteData = spriteDataArray[i];
+                    if (!sheetCounts.TryGetValue(spriteData.SpriteSheetId, out int count))
+                    {
+                        sheetCounts[spriteData.SpriteSheetId] = 1;
+                    }
+                    else
+                    {
+                        sheetCounts[spriteData.SpriteSheetId] = count + 1;
+                    }
+                }
 
-            translationAndRotationBuffer.SetData(translationAndRotations);
-            scaleBuffer.SetData(scales);
-            colorBuffer.SetData(colors);
-            uvIndexBuffer.SetData(uvIndices);
+                foreach (var sheetCount in sheetCounts)
+                {
+                    if (!renderGroups.TryGetValue(sheetCount.Key, out var group))
+                    {
+                        if (missingSheetWarnings.Add(sheetCount.Key))
+                        {
+                            Debug.LogWarning($"SpriteSystem found SpriteData using SpriteSheetId {sheetCount.Key}, but no matching SpriteSheetDefinition is loaded.");
+                        }
 
-            translationAndRotations.Dispose();
-            scales.Dispose();
-            colors.Dispose();
-            uvIndices.Dispose();
-            spriteDataArray.Dispose();
+                        continue;
+                    }
 
-            // Update args buffer
-            args[1] = (uint)spriteCount;
-            argsBuffer.SetData(args);
+                    group.EnsureCapacity(sheetCount.Value);
+                    group.ResetCount();
+                }
 
-            if (defaultMaterial != null)
-            {
-                Graphics.DrawMeshInstancedIndirect(GetQuad(), 0, defaultMaterial, BOUNDS, argsBuffer);
+                for (int i = 0; i < spriteDataArray.Length; i++)
+                {
+                    var spriteData = spriteDataArray[i];
+                    if (!renderGroups.TryGetValue(spriteData.SpriteSheetId, out var group))
+                    {
+                        continue;
+                    }
+
+                    if (group.FrameCount == 0)
+                    {
+                        continue;
+                    }
+
+                    int writeIndex = group.WriteIndex++;
+                    int frameIndex = math.clamp(spriteData.SpriteFrameIndex, 0, group.FrameCount - 1);
+                    group.TranslationAndRotationData[writeIndex] = spriteData.TranslationAndRotation;
+                    group.ScaleData[writeIndex] = spriteData.Scale;
+                    group.ColorData[writeIndex] = spriteData.Color;
+                    group.FrameIndexData[writeIndex] = frameIndex;
+                }
+
+                foreach (var group in renderGroups.Values)
+                {
+                    if (group.WriteIndex == 0)
+                    {
+                        continue;
+                    }
+
+                    group.Upload();
+                    Graphics.DrawMeshInstancedIndirect(GetQuadMesh(), 0, group.Material, group.Bounds, group.ArgsBuffer);
+                }
             }
-            else
+            finally
             {
-                Debug.LogError("Default material is null");
+                spriteDataArray.Dispose();
             }
         }
 
         protected override void OnDestroy()
         {
-            translationAndRotationBuffer?.Release();
-            scaleBuffer?.Release();
-            colorBuffer?.Release();
-            uvBuffer?.Release();
-            uvIndexBuffer?.Release();
-            argsBuffer?.Release();
+            foreach (var group in renderGroups.Values)
+            {
+                group.Dispose();
+            }
+
+            renderGroups.Clear();
+
+            if (quadMesh != null)
+            {
+                Object.Destroy(quadMesh);
+                quadMesh = null;
+            }
         }
 
-        private Mesh GetQuad()
+        private void BuildRenderGroups()
+        {
+            foreach (var group in renderGroups.Values)
+            {
+                group.Dispose();
+            }
+
+            renderGroups.Clear();
+
+            var definitions = SpriteSheetDatabase.GetDefinitions();
+            if (definitions == null || definitions.Length == 0)
+            {
+                hasLoggedMissingDefinitions = false;
+                return;
+            }
+
+            foreach (var definition in definitions)
+            {
+                if (definition == null)
+                {
+                    continue;
+                }
+
+                if (definition.BaseMaterial == null)
+                {
+                    Debug.LogError($"SpriteSheetDefinition '{definition.name}' is missing a base material.");
+                    continue;
+                }
+
+                if (renderGroups.ContainsKey(definition.SheetId))
+                {
+                    Debug.LogWarning($"Duplicate SpriteSheetId {definition.SheetId} detected. Skipping '{definition.name}'.");
+                    continue;
+                }
+
+                renderGroups.Add(definition.SheetId, new SpriteRenderGroup(definition));
+            }
+
+            hasLoggedMissingDefinitions = false;
+        }
+
+        private Mesh GetQuadMesh()
         {
             if (quadMesh == null)
             {
-                quadMesh = new Mesh();
-                Vector3[] vertices = new Vector3[4];
-                vertices[0] = new Vector3(0, 0, 0);
-                vertices[1] = new Vector3(1, 0, 0);
-                vertices[2] = new Vector3(0, 1, 0);
-                vertices[3] = new Vector3(1, 1, 0);
+                quadMesh = new Mesh
+                {
+                    name = "SpriteSystem Quad"
+                };
+
+                Vector3[] vertices =
+                {
+                    new Vector3(0, 0, 0),
+                    new Vector3(1, 0, 0),
+                    new Vector3(0, 1, 0),
+                    new Vector3(1, 1, 0)
+                };
                 quadMesh.vertices = vertices;
 
-                int[] tri = new int[6];
-                tri[0] = 0;
-                tri[1] = 2;
-                tri[2] = 1;
-                tri[3] = 2;
-                tri[4] = 3;
-                tri[5] = 1;
-                quadMesh.triangles = tri;
+                int[] triangles =
+                {
+                    0, 2, 1,
+                    2, 3, 1
+                };
+                quadMesh.triangles = triangles;
 
-                Vector3[] normals = new Vector3[4];
-                normals[0] = -Vector3.forward;
-                normals[1] = -Vector3.forward;
-                normals[2] = -Vector3.forward;
-                normals[3] = -Vector3.forward;
+                Vector3[] normals =
+                {
+                    -Vector3.forward,
+                    -Vector3.forward,
+                    -Vector3.forward,
+                    -Vector3.forward
+                };
                 quadMesh.normals = normals;
 
-                Vector2[] uv = new Vector2[4];
-                uv[0] = new Vector2(0, 0);
-                uv[1] = new Vector2(1, 0);
-                uv[2] = new Vector2(0, 1);
-                uv[3] = new Vector2(1, 1);
+                Vector2[] uv =
+                {
+                    new Vector2(0, 0),
+                    new Vector2(1, 0),
+                    new Vector2(0, 1),
+                    new Vector2(1, 1)
+                };
                 quadMesh.uv = uv;
+                quadMesh.RecalculateBounds();
             }
 
             return quadMesh;
         }
 
-        [BurstCompile]
-        private struct CollectDataJob : IJobParallelFor
+        private sealed class SpriteRenderGroup : System.IDisposable
         {
-            [ReadOnly] public NativeArray<SpriteData> SpriteDataArray;
-            public NativeArray<float4> TranslationAndRotations;
-            public NativeArray<float> Scales;
-            public NativeArray<float4> Colors;
-            public NativeArray<int> UVIndices;
+            public readonly int SheetId;
+            public readonly int CapacityStep;
+            public readonly Vector4[] Frames;
+            public readonly Bounds Bounds;
+            public readonly Material Material;
+            public readonly int FrameCount;
+            public ComputeBuffer TranslationAndRotationBuffer;
+            public ComputeBuffer ScaleBuffer;
+            public ComputeBuffer ColorBuffer;
+            public ComputeBuffer UvBuffer;
+            public ComputeBuffer FrameIndexBuffer;
+            public ComputeBuffer ArgsBuffer;
+            public uint[] Args;
+            public float4[] TranslationAndRotationData;
+            public float[] ScaleData;
+            public float4[] ColorData;
+            public int[] FrameIndexData;
+            public int Capacity;
+            public int WriteIndex;
 
-            public void Execute(int index)
+            public SpriteRenderGroup(SpriteSheetDefinition definition)
             {
-                var spriteData = SpriteDataArray[index];
-                TranslationAndRotations[index] = spriteData.TranslationAndRotation;
-                Scales[index] = spriteData.Scale;
-                Colors[index] = spriteData.Color;
-                UVIndices[index] = spriteData.UVIndex;
+                SheetId = definition.SheetId;
+                CapacityStep = math.max(1, definition.CapacityStep);
+                Bounds = definition.WorldBounds;
+                Frames = definition.Frames;
+                FrameCount = Frames.Length;
+                Material = new Material(definition.BaseMaterial)
+                {
+                    name = $"{definition.name} (Runtime)"
+                };
+                Material.enableInstancing = true;
+
+                if (definition.Texture != null)
+                {
+                    Material.mainTexture = definition.Texture;
+                }
+
+                CreateBuffers(math.max(1, definition.InitialCapacity));
+                UploadUvData();
+                BindBuffers();
+            }
+
+            public void ResetCount()
+            {
+                WriteIndex = 0;
+            }
+
+            public void EnsureCapacity(int requiredCount)
+            {
+                if (requiredCount <= Capacity)
+                {
+                    return;
+                }
+
+                int nextCapacity = math.max(requiredCount, Capacity + CapacityStep);
+                RecreateBuffers(nextCapacity);
+            }
+
+            public void Upload()
+            {
+                TranslationAndRotationBuffer.SetData(TranslationAndRotationData, 0, 0, WriteIndex);
+                ScaleBuffer.SetData(ScaleData, 0, 0, WriteIndex);
+                ColorBuffer.SetData(ColorData, 0, 0, WriteIndex);
+                FrameIndexBuffer.SetData(FrameIndexData, 0, 0, WriteIndex);
+
+                Args[1] = (uint)WriteIndex;
+                ArgsBuffer.SetData(Args);
+            }
+
+            public void Dispose()
+            {
+                ReleaseBuffer(ref TranslationAndRotationBuffer);
+                ReleaseBuffer(ref ScaleBuffer);
+                ReleaseBuffer(ref ColorBuffer);
+                ReleaseBuffer(ref UvBuffer);
+                ReleaseBuffer(ref FrameIndexBuffer);
+                ReleaseBuffer(ref ArgsBuffer);
+
+                if (Material != null)
+                {
+                    Object.Destroy(Material);
+                }
+            }
+
+            private void CreateBuffers(int capacity)
+            {
+                Capacity = capacity;
+                TranslationAndRotationData = new float4[capacity];
+                ScaleData = new float[capacity];
+                ColorData = new float4[capacity];
+                FrameIndexData = new int[capacity];
+                Args = new uint[5] { 6, 0, 0, 0, 0 };
+
+                TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16);
+                ScaleBuffer = new ComputeBuffer(capacity, sizeof(float));
+                ColorBuffer = new ComputeBuffer(capacity, 16);
+                FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int));
+                UvBuffer = new ComputeBuffer(math.max(1, FrameCount), 16);
+                ArgsBuffer = new ComputeBuffer(1, Args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+            }
+
+            private void RecreateBuffers(int capacity)
+            {
+                ReleaseBuffer(ref TranslationAndRotationBuffer);
+                ReleaseBuffer(ref ScaleBuffer);
+                ReleaseBuffer(ref ColorBuffer);
+                ReleaseBuffer(ref FrameIndexBuffer);
+                ReleaseBuffer(ref ArgsBuffer);
+
+                CreateBuffers(capacity);
+                UploadUvData();
+                BindBuffers();
+            }
+
+            private void UploadUvData()
+            {
+                if (FrameCount > 0)
+                {
+                    UvBuffer.SetData(Frames);
+                }
+            }
+
+            private void BindBuffers()
+            {
+                Material.SetBuffer(UvBufferId, UvBuffer);
+                Material.SetBuffer(TranslationAndRotationBufferId, TranslationAndRotationBuffer);
+                Material.SetBuffer(ScaleBufferId, ScaleBuffer);
+                Material.SetBuffer(ColorsBufferId, ColorBuffer);
+                Material.SetBuffer(FrameIndexBufferId, FrameIndexBuffer);
+            }
+
+            private static void ReleaseBuffer(ref ComputeBuffer buffer)
+            {
+                if (buffer != null)
+                {
+                    buffer.Release();
+                    buffer = null;
+                }
             }
         }
-
-        private static readonly Bounds BOUNDS = new Bounds(Vector2.zero, Vector3.one);
     }
 }

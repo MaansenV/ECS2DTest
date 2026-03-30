@@ -1,11 +1,11 @@
-# ECS2D Test
+# ECS2D Renderer
 
 <p align="center">
-  <img src=".github/ecs2d-banner.svg" alt="ECS2D Rendering Banner" width="100%" />
+  <img src=".github/ecs2d-banner.svg" alt="ECS2D Renderer Banner" width="100%" />
 </p>
 
 <p align="center">
-  A reusable Unity ECS sprite-rendering core for 2D projects, extracted into a clean UPM package.
+  Reusable 2D sprite rendering for Unity ECS as a UPM package.
 </p>
 
 <p align="center">
@@ -14,46 +14,54 @@
   <img src="https://img.shields.io/badge/Package-UPM-00A67E?style=for-the-badge" alt="UPM Package" />
 </p>
 
-## What this project is
-This repo contains a Unity ECS rendering demo and the reusable rendering package behind it.
+## Install
 
-The package lives in `Packages/com.ecs2d.renderer` and contains:
+Add this package in Unity Package Manager:
 
-- `ECS2D.Rendering.SpriteSystem`
-- `ECS2D.Rendering.SpriteData`
-- `ECS2D.Rendering.EntitiesReferences`
-- `ECS2D.Rendering.SpriteDataAuthoring`
-- `ECS2D.Rendering.EntitiesReferenceAuthoring`
+```text
+https://github.com/MaansenV/ECS2DTest.git?path=/Packages/com.ecs2d.renderer
+```
 
-## Why this version looks better
-- The reusable core is separated from the demo code.
-- The repo page now has a visual header instead of plain text.
-- The important setup details are grouped into short, scannable sections.
+Or add it directly to `manifest.json`:
 
-## Quick Start
-1. Open the project in Unity `6000.3.10f1` or newer.
-2. Keep the package folder `Packages/com.ecs2d.renderer` in the repo or install it as a local package.
-3. Add `SpriteDataAuthoring` to entities that should be rendered.
-4. Add `EntitiesReferenceAuthoring` to a scene object and assign the bullet prefab.
-5. Make sure the material `Third` is available so `SpriteSystem` can load it through `Resources`.
+```json
+{
+  "dependencies": {
+    "com.ecs2d.renderer": "https://github.com/MaansenV/ECS2DTest.git?path=/Packages/com.ecs2d.renderer"
+  }
+}
+```
 
-## Included files
-- Runtime ECS code
-- Authoring components
-- The custom shader used by the renderer
-- The material and texture assets required by the renderer
+## What you get
 
-## Demo-only code
-The following pieces stay outside the package on purpose:
+- `SpriteSystem`
+- `SpriteData`
+- `EntitiesReferences`
+- `SpriteDataAuthoring`
+- `EntitiesReferenceAuthoring`
+- Material, shader, and texture used by the renderer
 
-- `Systems.SpawnSystem`
-- `EntitiCounter`
+Namespace:
 
-## Package path
-If you want to reuse the renderer in another Unity project, point that project at:
+```csharp
+using ECS2D.Rendering;
+```
 
-`Packages/com.ecs2d.renderer`
+## How to use
 
-## Notes
-- This project is based on Unity ECS with indirect instanced rendering.
-- The package is meant to be copied, embedded, or referenced from Git without manually hunting through source files.
+1. Install the package.
+2. Create or use a prefab with `SpriteDataAuthoring`.
+3. Add `EntitiesReferenceAuthoring` to a scene object.
+4. Assign your prefab in `bulletPrefab`.
+5. Enter Play Mode and let `SpriteSystem` render the ECS sprites.
+
+## Requirements
+
+- Unity `6000.3.10f1` or newer
+- `com.unity.entities` `1.4.x`
+
+## Package Path
+
+```text
+Packages/com.ecs2d.renderer
+```

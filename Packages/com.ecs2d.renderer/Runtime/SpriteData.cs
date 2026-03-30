@@ -8,6 +8,7 @@ namespace ECS2D.Rendering
         public float4 TranslationAndRotation;
         public float Scale;
         public float4 Color;
-        public int UVIndex;
+        public int SpriteFrameIndex;
+        public int SpriteSheetId;
     }
 }

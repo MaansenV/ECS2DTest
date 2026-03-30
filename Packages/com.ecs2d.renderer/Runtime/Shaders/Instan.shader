@@ -31,7 +31,7 @@
             StructuredBuffer<float> scaleBuffer;
             StructuredBuffer<float4> colorsBuffer;
             StructuredBuffer<float4> uvBuffer;
-            StructuredBuffer<int> uvIndexBuffer;
+            StructuredBuffer<int> frameIndexBuffer;
 
             struct v2f {
                 float4 pos : SV_POSITION;
@@ -52,8 +52,8 @@
 
             v2f vert(appdata_full v, uint instanceID : SV_InstanceID) {
                 float4 translationAndRot = translationAndRotationBuffer[instanceID];
-                int uvIndex = uvIndexBuffer[instanceID];
-                float4 uv = uvBuffer[uvIndex];
+                int frameIndex = frameIndexBuffer[instanceID];
+                float4 uv = uvBuffer[frameIndex];
 
                 // Rotate the vertex
                 v.vertex = mul(v.vertex - float4(0.5, 0.5, 0, 0), rotationZMatrix(translationAndRot.w));
