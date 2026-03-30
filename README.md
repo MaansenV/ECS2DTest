@@ -54,6 +54,10 @@ Namespace:
 using ECS2D.Rendering;
 ```
 
+## Documentation
+
+For a detailed guide with short code snippets on how everything is used, check out the **[DOCUMENTATION.md](DOCUMENTATION.md)**.
+
 ## Quick usage
 
 1. Install the package.
