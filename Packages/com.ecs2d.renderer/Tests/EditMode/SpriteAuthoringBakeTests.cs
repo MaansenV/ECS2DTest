@@ -12,7 +12,7 @@ namespace ECS2D.Rendering.Tests
         public void SpriteDataAuthoring_BakesSharedRenderKeyForInitialSheet()
         {
             using var world = new World("SpriteAuthoringBakeTests");
-            using var blobAssetStore = new BlobAssetStore();
+            using var blobAssetStore = new BlobAssetStore(128);
 
             var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
             var root = new GameObject("SpriteAuthoringBakeTests");
@@ -47,7 +47,7 @@ namespace ECS2D.Rendering.Tests
         public void SpriteAnimationAuthoring_BakesResolvedStartClipIndex()
         {
             using var world = new World("SpriteAuthoringBakeTests");
-            using var blobAssetStore = new BlobAssetStore();
+            using var blobAssetStore = new BlobAssetStore(128);
 
             var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
             var animationSet = ScriptableObject.CreateInstance<SpriteAnimationSetDefinition>();
@@ -109,6 +109,184 @@ namespace ECS2D.Rendering.Tests
             }
         }
 
+        [Test]
+        public void SpriteDataAuthoring_BakesFlipXFromNegativeScale()
+        {
+            using var world = new World("SpriteAuthoringBakeTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var root = new GameObject("SpriteAuthoringBakeTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 42);
+                SetField(sheet, "autoGenerateGridFrames", false);
+                SetField(sheet, "frames", new[] { new Vector4(1f, 1f, 0f, 0f) });
+
+                var authoring = root.AddComponent<SpriteDataAuthoring>();
+                authoring.SpriteSheet = sheet;
+                root.transform.localScale = new Vector3(-2f, 2f, 1f);
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                var bakedEntity = GetBakedEntity(bakingSystem, root);
+                var spriteData = world.EntityManager.GetComponentData<SpriteData>(bakedEntity);
+
+                Assert.AreEqual(1, spriteData.FlipX);
+                Assert.AreEqual(0, spriteData.FlipY);
+                Assert.AreEqual(2f, spriteData.Scale, 0.0001f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
+        public void SpriteDataAuthoring_BakesFlipXAndFlipYFromNegativeScale()
+        {
+            using var world = new World("SpriteAuthoringBakeTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var root = new GameObject("SpriteAuthoringBakeTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 42);
+                SetField(sheet, "autoGenerateGridFrames", false);
+                SetField(sheet, "frames", new[] { new Vector4(1f, 1f, 0f, 0f) });
+
+                var authoring = root.AddComponent<SpriteDataAuthoring>();
+                authoring.SpriteSheet = sheet;
+                root.transform.localScale = new Vector3(-2f, -2f, 1f);
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                var bakedEntity = GetBakedEntity(bakingSystem, root);
+                var spriteData = world.EntityManager.GetComponentData<SpriteData>(bakedEntity);
+
+                Assert.AreEqual(1, spriteData.FlipX);
+                Assert.AreEqual(1, spriteData.FlipY);
+                Assert.AreEqual(2f, spriteData.Scale, 0.0001f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
+        public void SpriteAnimationAuthoring_BakesFlipFromNegativeScale_WithoutSpriteDataAuthoring()
+        {
+            using var world = new World("SpriteAuthoringBakeTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var animationSet = ScriptableObject.CreateInstance<SpriteAnimationSetDefinition>();
+            var root = new GameObject("SpriteAnimationAuthoringBakeTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 7);
+                SetField(sheet, "columns", 4);
+                SetField(sheet, "rows", 2);
+                SetField(sheet, "autoGenerateGridFrames", true);
+
+                animationSet.SpriteSheet = sheet;
+                animationSet.Clips.Add(new SpriteAnimationClip
+                {
+                    Name = "Idle",
+                    Row = 0,
+                    StartColumn = 0,
+                    FrameCount = 2,
+                    FrameRate = 2f,
+                    Loop = true
+                });
+
+                var authoring = root.AddComponent<SpriteAnimationAuthoring>();
+                authoring.AnimationSet = animationSet;
+                authoring.PlayOnStart = true;
+                root.transform.localScale = new Vector3(-1.5f, 1.5f, 1f);
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                var bakedEntity = GetBakedEntity(bakingSystem, root);
+                var spriteData = world.EntityManager.GetComponentData<SpriteData>(bakedEntity);
+
+                Assert.AreEqual(1, spriteData.FlipX);
+                Assert.AreEqual(0, spriteData.FlipY);
+                Assert.AreEqual(1.5f, spriteData.Scale, 0.0001f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(animationSet);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
+        public void SpriteAnimationAuthoring_BakesFlipXAndFlipYFromNegativeScale_WithoutSpriteDataAuthoring()
+        {
+            using var world = new World("SpriteAuthoringBakeTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var animationSet = ScriptableObject.CreateInstance<SpriteAnimationSetDefinition>();
+            var root = new GameObject("SpriteAnimationAuthoringBakeTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 7);
+                SetField(sheet, "columns", 4);
+                SetField(sheet, "rows", 2);
+                SetField(sheet, "autoGenerateGridFrames", true);
+
+                animationSet.SpriteSheet = sheet;
+                animationSet.Clips.Add(new SpriteAnimationClip
+                {
+                    Name = "Idle",
+                    Row = 0,
+                    StartColumn = 0,
+                    FrameCount = 2,
+                    FrameRate = 2f,
+                    Loop = true
+                });
+
+                var authoring = root.AddComponent<SpriteAnimationAuthoring>();
+                authoring.AnimationSet = animationSet;
+                authoring.PlayOnStart = true;
+                root.transform.localScale = new Vector3(-1.5f, -1.5f, 1f);
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                var bakedEntity = GetBakedEntity(bakingSystem, root);
+                var spriteData = world.EntityManager.GetComponentData<SpriteData>(bakedEntity);
+
+                Assert.AreEqual(1, spriteData.FlipX);
+                Assert.AreEqual(1, spriteData.FlipY);
+                Assert.AreEqual(1.5f, spriteData.Scale, 0.0001f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(animationSet);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
         private static object CreateBakingSettings(BlobAssetStore blobAssetStore)
         {
             Assembly hybridAssembly = typeof(BakingSystem).Assembly;
@@ -116,13 +294,9 @@ namespace ECS2D.Rendering.Tests
             Type bakingUtilityType = hybridAssembly.GetType("Unity.Entities.BakingUtility", throwOnError: true);
             Type bakingFlagsType = bakingUtilityType.GetNestedType("BakingFlags", BindingFlags.Public);
 
-            object bakingSettings = Activator.CreateInstance(bakingSettingsType);
             object flags = Enum.Parse(bakingFlagsType, "AssignName, AddEntityGUID");
-
-            bakingSettingsType.GetField("BakingFlags", BindingFlags.Instance | BindingFlags.Public)?.SetValue(bakingSettings, flags);
-            bakingSettingsType.GetProperty("BlobAssetStore", BindingFlags.Instance | BindingFlags.Public)?.SetValue(bakingSettings, blobAssetStore);
-
-            return bakingSettings;
+            ConstructorInfo ctor = bakingSettingsType.GetConstructor(new[] { bakingFlagsType, typeof(BlobAssetStore) });
+            return ctor.Invoke(new object[] { flags, blobAssetStore });
         }
 
         private static void InvokeBakeGameObjects(World world, object bakingSettings, GameObject root)

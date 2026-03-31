@@ -41,6 +41,104 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
+        public void SpriteTransformSyncSystem_PreservesFlipXFromNegativeXScale()
+        {
+            using var world = new World("SpriteTransformSyncSystemTests");
+            var entityManager = world.EntityManager;
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+            Entity entity = CreateLocalToWorldDrivenSprite(world);
+
+            float4x4 trs = float4x4.TRS(
+                new float3(2f, 3f, 0f),
+                quaternion.RotateZ(0f),
+                new float3(-2.5f, 2.5f, 1f));
+            entityManager.SetComponentData(entity, new LocalToWorld { Value = trs });
+
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            SpriteData spriteData = entityManager.GetComponentData<SpriteData>(entity);
+            Assert.That(spriteData.TranslationAndRotation.x, Is.EqualTo(2f).Within(0.0001f));
+            Assert.That(spriteData.TranslationAndRotation.y, Is.EqualTo(3f).Within(0.0001f));
+            Assert.That(spriteData.TranslationAndRotation.w, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(spriteData.Scale, Is.EqualTo(2.5f).Within(0.0001f));
+            Assert.That(spriteData.FlipX, Is.EqualTo(1));
+            Assert.That(spriteData.FlipY, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void SpriteTransformSyncSystem_PreservesFlipXFromNegativeYScale()
+        {
+            using var world = new World("SpriteTransformSyncSystemTests");
+            var entityManager = world.EntityManager;
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+            Entity entity = CreateLocalToWorldDrivenSprite(world);
+
+            float4x4 trs = float4x4.TRS(
+                new float3(0f, 0f, 0f),
+                quaternion.RotateZ(0f),
+                new float3(2.5f, -2.5f, 1f));
+            entityManager.SetComponentData(entity, new LocalToWorld { Value = trs });
+
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            SpriteData spriteData = entityManager.GetComponentData<SpriteData>(entity);
+            Assert.That(spriteData.TranslationAndRotation.w, Is.EqualTo(math.PI).Within(0.0001f));
+            Assert.That(spriteData.Scale, Is.EqualTo(2.5f).Within(0.0001f));
+            Assert.That(spriteData.FlipX, Is.EqualTo(1));
+            Assert.That(spriteData.FlipY, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void SpriteTransformSyncSystem_NoFlipWithDoubleNegativeScale()
+        {
+            using var world = new World("SpriteTransformSyncSystemTests");
+            var entityManager = world.EntityManager;
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+            Entity entity = CreateLocalToWorldDrivenSprite(world);
+
+            float4x4 trs = float4x4.TRS(
+                new float3(0f, 0f, 0f),
+                quaternion.RotateZ(0f),
+                new float3(-2.5f, -2.5f, 1f));
+            entityManager.SetComponentData(entity, new LocalToWorld { Value = trs });
+
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            SpriteData spriteData = entityManager.GetComponentData<SpriteData>(entity);
+            Assert.That(spriteData.TranslationAndRotation.w, Is.EqualTo(math.PI).Within(0.0001f));
+            Assert.That(spriteData.Scale, Is.EqualTo(2.5f).Within(0.0001f));
+            Assert.That(spriteData.FlipX, Is.EqualTo(0));
+            Assert.That(spriteData.FlipY, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void SpriteTransformSyncSystem_PreservesFlipXWithRotationAndNegativeScale()
+        {
+            using var world = new World("SpriteTransformSyncSystemTests");
+            var entityManager = world.EntityManager;
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+            Entity entity = CreateLocalToWorldDrivenSprite(world);
+
+            float4x4 trs = float4x4.TRS(
+                new float3(1f, 2f, 0f),
+                quaternion.RotateZ(math.radians(45f)),
+                new float3(-3f, 3f, 1f));
+            entityManager.SetComponentData(entity, new LocalToWorld { Value = trs });
+
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            SpriteData spriteData = entityManager.GetComponentData<SpriteData>(entity);
+            Assert.That(spriteData.TranslationAndRotation.w, Is.EqualTo(math.radians(45f)).Within(0.0001f));
+            Assert.That(spriteData.Scale, Is.EqualTo(3f).Within(0.0001f));
+            Assert.That(spriteData.FlipX, Is.EqualTo(1));
+            Assert.That(spriteData.FlipY, Is.EqualTo(0));
+        }
+
+        [Test]
         public void SpriteTransformSyncSystem_UpdatesDisabledCullEntitiesToo()
         {
             using var world = new World("SpriteTransformSyncDisabledTests");
@@ -216,7 +314,7 @@ namespace ECS2D.Rendering.Tests
             using var world = new World("SpriteSystemBaseIndexTests");
             var entityManager = world.EntityManager;
             var spriteSystem = world.GetOrCreateSystemManaged<SpriteSystem>();
-            EntityArchetype archetype = entityManager.CreateArchetype(typeof(SpriteData), typeof(SpriteCullState));
+            EntityArchetype archetype = entityManager.CreateArchetype(typeof(SpriteData), typeof(SpriteCullState), typeof(SpriteSheetRenderKey));
 
             for (int i = 0; i < 512; i++)
             {
@@ -282,6 +380,29 @@ namespace ECS2D.Rendering.Tests
                 typeof(SpriteCullState));
 
             world.EntityManager.SetComponentData(entity, LocalTransform.Identity);
+            world.EntityManager.SetComponentData(entity, new LocalToWorld
+            {
+                Value = float4x4.identity
+            });
+            world.EntityManager.SetComponentData(entity, new SpriteData
+            {
+                TranslationAndRotation = float4.zero,
+                Scale = 1f,
+                Color = new float4(1f),
+                SpriteFrameIndex = 0,
+                SpriteSheetId = 7
+            });
+
+            return entity;
+        }
+
+        private static Entity CreateLocalToWorldDrivenSprite(World world)
+        {
+            Entity entity = world.EntityManager.CreateEntity(
+                typeof(LocalToWorld),
+                typeof(SpriteData),
+                typeof(SpriteCullState));
+
             world.EntityManager.SetComponentData(entity, new LocalToWorld
             {
                 Value = float4x4.identity

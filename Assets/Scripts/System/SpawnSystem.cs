@@ -86,6 +86,11 @@ namespace Systems
                     state.EntityManager.SetComponentData(entity, localTransform);
                     worldMatrix = float4x4.TRS(position, rotation, new float3(spawnSettings.SpriteSize));
                     rotationRadians = math.atan2(worldMatrix.c0.y, worldMatrix.c0.x);
+
+                    if (math.abs(rotationRadians + math.PI) < 0.0001f)
+                    {
+                        rotationRadians = math.PI;
+                    }
                 }
 
                 if (state.EntityManager.HasComponent<LocalToWorld>(entity))

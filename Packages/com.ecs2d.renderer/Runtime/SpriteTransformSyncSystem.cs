@@ -19,12 +19,57 @@ namespace ECS2D.Rendering
             private void Execute(ref SpriteData spriteData, in LocalToWorld localToWorld)
             {
                 float4x4 matrix = localToWorld.Value;
-                float rotationRadians = math.atan2(matrix.c0.y, matrix.c0.x);
-                float scale = math.length(matrix.c0.xyz);
+                float3 xAxis = matrix.c0.xyz;
+                float3 yAxis = matrix.c1.xyz;
                 float3 position = localToWorld.Position;
 
+                float scaleX = math.length(xAxis);
+                float det2D = xAxis.x * yAxis.y - xAxis.y * yAxis.x;
+
+                float rotationRadians;
+                byte flipX = 0;
+
+                if (scaleX > 0.0001f)
+                {
+                    rotationRadians = math.atan2(xAxis.y, xAxis.x);
+
+                    if (math.abs(rotationRadians + math.PI) < 0.0001f)
+                    {
+                        rotationRadians = math.PI;
+                    }
+
+                    if (det2D < 0f)
+                    {
+                        float scaleY = math.length(yAxis);
+                        if (scaleY > 0.0001f)
+                        {
+                            rotationRadians = math.atan2(-yAxis.x, yAxis.y);
+
+                            if (math.abs(rotationRadians + math.PI) < 0.0001f)
+                            {
+                                rotationRadians = math.PI;
+                            }
+                        }
+                        flipX = 1;
+                    }
+                }
+                else
+                {
+                    float scaleY = math.length(yAxis);
+                    rotationRadians = scaleY > 0.0001f
+                        ? math.atan2(-yAxis.x, yAxis.y)
+                        : 0f;
+
+                    if (math.abs(rotationRadians + math.PI) < 0.0001f)
+                    {
+                        rotationRadians = math.PI;
+                    }
+                }
+
                 spriteData.TranslationAndRotation = new float4(position, rotationRadians);
-                spriteData.Scale = scale;
+                spriteData.Scale = scaleX;
+                spriteData.FlipX = flipX;
+                spriteData.FlipY = 0;
             }
         }
 

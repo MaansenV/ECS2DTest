@@ -32,6 +32,7 @@
             StructuredBuffer<float4> colorsBuffer;
             StructuredBuffer<float4> uvBuffer;
             StructuredBuffer<int> frameIndexBuffer;
+            StructuredBuffer<float2> flipBuffer;
 
             struct v2f {
                 float4 pos : SV_POSITION;
@@ -67,6 +68,14 @@
 
                 // Apply UV transformation
                 o.uv = v.texcoord * uv.xy + uv.zw;
+
+                // Apply flip
+                float2 flip = flipBuffer[instanceID];
+                float2 frameMin = uv.zw;
+                float2 frameMax = uv.zw + uv.xy;
+                if (flip.x > 0.5) o.uv.x = frameMax.x - (o.uv.x - frameMin.x);
+                if (flip.y > 0.5) o.uv.y = frameMax.y - (o.uv.y - frameMin.y);
+
                 o.color = colorsBuffer[instanceID];
                 return o;
             }

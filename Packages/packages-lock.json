@@ -11,24 +11,6 @@
         "com.unity.mathematics": "1.3.2"
       }
     },
-    "com.tonymax.nsprites": {
-      "version": "https://github.com/Antoshidza/NSprites.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.entities": "1.0.0-pre.65"
-      },
-      "hash": "8e6a8f0a88398e18bed376d0ee09ec2059fb1bfa"
-    },
-    "com.tonymax.nsprites.foundation": {
-      "version": "https://github.com/Antoshidza/NSprites-Foundation.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.entities": "1.0.0-pre.65"
-      },
-      "hash": "e5257fa47a94299366ee68d9ce11b751033ff35d"
-    },
     "com.unity.2d.animation": {
       "version": "13.0.4",
       "depth": 1,

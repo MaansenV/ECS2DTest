@@ -103,8 +103,10 @@ namespace ECS2D.Rendering
                     Debug.LogWarning($"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' uses non-uniform scale. The renderer will use X scale for a uniform sprite size.");
                 }
 
+                bool flipX = lossyScale.x < 0f;
+                bool flipY = lossyScale.y < 0f;
                 float rotationRadians = math.radians(authoring.transform.eulerAngles.z);
-                float scale = lossyScale.x;
+                float scale = math.abs(lossyScale.x);
                 Vector3 position = authoring.transform.position;
 
                 AddComponent(entity, new SpriteData
@@ -113,7 +115,9 @@ namespace ECS2D.Rendering
                     Scale = scale,
                     Color = new float4(1f, 1f, 1f, 1f),
                     SpriteFrameIndex = startFrameIndex,
-                    SpriteSheetId = authoring.AnimationSet.SpriteSheet.SheetId
+                    SpriteSheetId = authoring.AnimationSet.SpriteSheet.SheetId,
+                    FlipX = (byte)(flipX ? 1 : 0),
+                    FlipY = (byte)(flipY ? 1 : 0)
                 });
                 AddComponent<SpriteCullState>(entity);
                 AddSharedComponent(entity, SpriteSheetRuntime.CreateRenderKey(authoring.AnimationSet.SpriteSheet.SheetId));

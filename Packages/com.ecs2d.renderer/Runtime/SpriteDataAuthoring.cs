@@ -11,6 +11,8 @@ namespace ECS2D.Rendering
         public float BaseScale = 1f;
         public float4 Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
         public float RotationOffsetDegrees;
+        public bool FlipX;
+        public bool FlipY;
 
         private class SpriteDataAuthoringBaker : Baker<SpriteDataAuthoring>
         {
@@ -31,11 +33,14 @@ namespace ECS2D.Rendering
                     Debug.LogWarning($"{nameof(SpriteDataAuthoring)} on '{authoring.name}' uses non-uniform scale. The renderer will use X scale for a uniform sprite size.");
                 }
 
+                bool flipX = authoring.FlipX ^ (lossyScale.x < 0f);
+                bool flipY = authoring.FlipY ^ (lossyScale.y < 0f);
+
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 int frameCount = math.max(1, authoring.SpriteSheet.FrameCount);
                 int spriteFrameIndex = math.clamp(authoring.SpriteFrameIndex, 0, frameCount - 1);
                 float rotationRadians = math.radians(authoring.transform.eulerAngles.z + authoring.RotationOffsetDegrees);
-                float scale = authoring.BaseScale * lossyScale.x;
+                float scale = authoring.BaseScale * math.abs(lossyScale.x);
                 Vector3 position = authoring.transform.position;
 
                 var data = new SpriteData
@@ -44,7 +49,9 @@ namespace ECS2D.Rendering
                     Scale = scale,
                     Color = authoring.Color,
                     SpriteFrameIndex = spriteFrameIndex,
-                    SpriteSheetId = authoring.SpriteSheet.SheetId
+                    SpriteSheetId = authoring.SpriteSheet.SheetId,
+                    FlipX = (byte)(flipX ? 1 : 0),
+                    FlipY = (byte)(flipY ? 1 : 0)
                 };
 
                 AddComponent(entity, data);

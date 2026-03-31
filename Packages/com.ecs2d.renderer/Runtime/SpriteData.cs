@@ -10,5 +10,7 @@ namespace ECS2D.Rendering
         public float4 Color;
         public int SpriteFrameIndex;
         public int SpriteSheetId;
+        public byte FlipX;
+        public byte FlipY;
     }
 }

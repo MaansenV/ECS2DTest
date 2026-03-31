@@ -26,6 +26,7 @@ namespace ECS2D.Rendering
         private static readonly int ColorsBufferId = Shader.PropertyToID("colorsBuffer");
         private static readonly int UvBufferId = Shader.PropertyToID("uvBuffer");
         private static readonly int FrameIndexBufferId = Shader.PropertyToID("frameIndexBuffer");
+        private static readonly int FlipBufferId = Shader.PropertyToID("flipBuffer");
 
         [BurstCompile]
         private struct UploadSpriteDataJob : IJobChunk
@@ -38,6 +39,7 @@ namespace ECS2D.Rendering
             [NativeDisableParallelForRestriction] public NativeArray<float> ScaleOutput;
             [NativeDisableParallelForRestriction] public NativeArray<float4> ColorOutput;
             [NativeDisableParallelForRestriction] public NativeArray<int> FrameIndexOutput;
+            [NativeDisableParallelForRestriction] public NativeArray<float2> FlipOutput;
             public int MaxFrameIndex;
 
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
@@ -70,6 +72,7 @@ namespace ECS2D.Rendering
                 ScaleOutput[outputIndex] = spriteData.Scale;
                 ColorOutput[outputIndex] = spriteData.Color;
                 FrameIndexOutput[outputIndex] = math.clamp(spriteData.SpriteFrameIndex, 0, MaxFrameIndex);
+                FlipOutput[outputIndex] = new float2(spriteData.FlipX, spriteData.FlipY);
             }
         }
 
@@ -147,6 +150,7 @@ namespace ECS2D.Rendering
                     ScaleOutput = group.BeginScaleWrite(spriteCount),
                     ColorOutput = group.BeginColorWrite(spriteCount),
                     FrameIndexOutput = group.BeginFrameIndexWrite(spriteCount),
+                    FlipOutput = group.BeginFlipWrite(spriteCount),
                     MaxFrameIndex = math.max(0, group.FrameCount - 1)
                 }.ScheduleParallel(filteredSpriteQuery, chunkBaseEntityIndicesHandle);
 
@@ -289,6 +293,7 @@ namespace ECS2D.Rendering
                 public ComputeBuffer ScaleBuffer;
                 public ComputeBuffer ColorBuffer;
                 public ComputeBuffer FrameIndexBuffer;
+                public ComputeBuffer FlipBuffer;
                 public ComputeBuffer ArgsBuffer;
                 public uint[] Args;
             }
@@ -355,6 +360,9 @@ namespace ECS2D.Rendering
             public NativeArray<int> BeginFrameIndexWrite(int count)
                 => frameBuffers[activeFrameBufferIndex].FrameIndexBuffer.BeginWrite<int>(0, count);
 
+            public NativeArray<float2> BeginFlipWrite(int count)
+                => frameBuffers[activeFrameBufferIndex].FlipBuffer.BeginWrite<float2>(0, count);
+
             public void AdvanceFrame()
             {
                 activeFrameBufferIndex = (activeFrameBufferIndex + 1) % UploadBufferCount;
@@ -373,6 +381,7 @@ namespace ECS2D.Rendering
                 activeFrameBuffers.ScaleBuffer.EndWrite<float>(WriteIndex);
                 activeFrameBuffers.ColorBuffer.EndWrite<float4>(WriteIndex);
                 activeFrameBuffers.FrameIndexBuffer.EndWrite<int>(WriteIndex);
+                activeFrameBuffers.FlipBuffer.EndWrite<float2>(WriteIndex);
 
                 activeFrameBuffers.Args[1] = (uint)WriteIndex;
                 activeFrameBuffers.ArgsBuffer.SetData(activeFrameBuffers.Args);
@@ -440,6 +449,7 @@ namespace ECS2D.Rendering
                 Material.SetBuffer(ScaleBufferId, buffers.ScaleBuffer);
                 Material.SetBuffer(ColorsBufferId, buffers.ColorBuffer);
                 Material.SetBuffer(FrameIndexBufferId, buffers.FrameIndexBuffer);
+                Material.SetBuffer(FlipBufferId, buffers.FlipBuffer);
             }
 
             private static FrameBuffers CreateFrameBuffers(int capacity)
@@ -451,6 +461,7 @@ namespace ECS2D.Rendering
                     ScaleBuffer = new ComputeBuffer(capacity, sizeof(float), ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
                     ColorBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
                     FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
+                    FlipBuffer = new ComputeBuffer(capacity, 8, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
                     ArgsBuffer = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments)
                 };
             }
@@ -461,6 +472,7 @@ namespace ECS2D.Rendering
                 ReleaseBuffer(ref buffers.ScaleBuffer);
                 ReleaseBuffer(ref buffers.ColorBuffer);
                 ReleaseBuffer(ref buffers.FrameIndexBuffer);
+                ReleaseBuffer(ref buffers.FlipBuffer);
                 ReleaseBuffer(ref buffers.ArgsBuffer);
                 buffers.Args = null;
             }

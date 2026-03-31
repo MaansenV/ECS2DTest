@@ -97,8 +97,8 @@ namespace ECS2D.Rendering.Tests
             spriteData = entityManager.GetComponentData<SpriteData>(entity);
 
             Assert.AreEqual(1, state.CurrentClipIndex);
-            Assert.AreEqual(0, state.CurrentFrameIndex);
-            Assert.AreEqual(5, spriteData.SpriteFrameIndex);
+            Assert.AreEqual(1, state.CurrentFrameIndex);
+            Assert.AreEqual(6, spriteData.SpriteFrameIndex);
 
             world.SetTime(new TimeData(1.5, 0.5f));
             system.Update(world.Unmanaged);
