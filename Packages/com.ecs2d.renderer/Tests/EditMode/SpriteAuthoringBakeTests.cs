@@ -80,6 +80,10 @@ namespace ECS2D.Rendering.Tests
                     Loop = true
                 });
 
+                var spriteDataAuthoring = root.AddComponent<SpriteDataAuthoring>();
+                spriteDataAuthoring.SpriteSheet = sheet;
+                spriteDataAuthoring.SortingLayer = 2;
+
                 var authoring = root.AddComponent<SpriteAnimationAuthoring>();
                 authoring.AnimationSet = animationSet;
                 authoring.StartAnimation = "Run";
@@ -99,12 +103,103 @@ namespace ECS2D.Rendering.Tests
                 Assert.AreEqual(1.5f, state.PlaybackSpeed, 0.0001f);
                 Assert.AreEqual(1, state.Playing);
                 Assert.AreEqual(5, spriteData.SpriteFrameIndex);
+                Assert.AreEqual(2, spriteData.SortingLayer);
+                Assert.AreEqual(
+                    SpriteSortingUtility.CalculateRenderDepth(2, 0f, 7),
+                    spriteData.RenderDepth,
+                    0.0001f);
                 Assert.IsTrue(world.EntityManager.HasComponent<SpriteCullState>(bakedEntity));
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
                 UnityEngine.Object.DestroyImmediate(animationSet);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
+        public void SpriteAnimationAuthoring_RequiresSpriteDataAuthoring()
+        {
+            using var world = new World("SpriteAnimationRequiresSpriteDataAuthoringTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var animationSet = ScriptableObject.CreateInstance<SpriteAnimationSetDefinition>();
+            var root = new GameObject("SpriteAnimationRequiresSpriteDataAuthoringTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 23);
+                SetField(sheet, "columns", 2);
+                SetField(sheet, "rows", 1);
+                SetField(sheet, "autoGenerateGridFrames", true);
+
+                animationSet.SpriteSheet = sheet;
+                animationSet.Clips.Add(new SpriteAnimationClip
+                {
+                    Name = "Idle",
+                    Row = 0,
+                    StartColumn = 0,
+                    FrameCount = 1,
+                    FrameRate = 1f,
+                    Loop = true
+                });
+
+                var authoring = root.AddComponent<SpriteAnimationAuthoring>();
+                authoring.AnimationSet = animationSet;
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                Assert.Throws<Exception>(() => GetBakedEntity(bakingSystem, root));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(animationSet);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
+        public void SpriteDataAuthoring_BakesSortingLayerAndRenderDepth()
+        {
+            using var world = new World("SpriteAuthoringSortingLayerBakeTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var root = new GameObject("SpriteAuthoringSortingLayerBakeTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 11);
+                SetField(sheet, "autoGenerateGridFrames", false);
+                SetField(sheet, "frames", new[] { new Vector4(1f, 1f, 0f, 0f) });
+
+                var authoring = root.AddComponent<SpriteDataAuthoring>();
+                authoring.SpriteSheet = sheet;
+                authoring.SortingLayer = 4;
+                root.transform.position = new Vector3(3f, -2f, 7f);
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                var bakedEntity = GetBakedEntity(bakingSystem, root);
+                var spriteData = world.EntityManager.GetComponentData<SpriteData>(bakedEntity);
+
+                Assert.AreEqual(4, spriteData.SortingLayer);
+                Assert.AreEqual(7f, spriteData.TranslationAndRotation.z, 0.0001f);
+                Assert.AreEqual(
+                    SpriteSortingUtility.CalculateRenderDepth(4, -2f, 11),
+                    spriteData.RenderDepth,
+                    0.0001f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
                 UnityEngine.Object.DestroyImmediate(sheet);
             }
         }

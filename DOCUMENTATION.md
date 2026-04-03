@@ -89,6 +89,7 @@ Attach `SpriteDataAuthoring` to a GameObject or Prefab to author a 2D sprite ent
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `SpriteSheet` | `SpriteSheetDefinition` | `null` | Reference to the sprite sheet asset. **Required.** |
+| `SortingLayer` | `int` | `0` | Custom ECS sorting layer. Higher values render in front of lower values, even across different sprite sheets. Within the same layer, sorting continues by `transform.position.y`. |
 | `SpriteFrameIndex` | `int` | `0` | Index of the frame to display initially. Clamped to valid range during baking. |
 | `BaseScale` | `float` | `1f` | Scale multiplier. The final baked scale is `BaseScale * transform.lossyScale.x`. **Only the X-axis scale is used** (the renderer expects uniform scaling). Non-uniform scaling will log a warning. |
 | `Color` | `float4` | `(1,1,1,1)` | RGBA tint color. |
@@ -164,7 +165,7 @@ Clip index 0 = "Idle", clip index 1 = "Run", clip index 2 = "Attack".
 
 ### 4c. Animation Authoring
 
-Attach `SpriteAnimationAuthoring` alongside `SpriteDataAuthoring` to control animation playback on the entity.
+Attach `SpriteAnimationAuthoring` alongside `SpriteDataAuthoring` to control animation playback on the entity. `SpriteDataAuthoring` remains the single source of truth for sorting and base sprite render data.
 
 **Properties:**
 

@@ -38,6 +38,9 @@ namespace ECS2D.Rendering.Tests
             Assert.That(spriteData.TranslationAndRotation.z, Is.EqualTo(4f).Within(0.0001f));
             Assert.That(spriteData.TranslationAndRotation.w, Is.EqualTo(math.radians(45f)).Within(0.0001f));
             Assert.That(spriteData.Scale, Is.EqualTo(2.5f).Within(0.0001f));
+            Assert.That(
+                spriteData.RenderDepth,
+                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(spriteData.SortingLayer, 3f, spriteData.SpriteSheetId)).Within(0.0001f));
         }
 
         [Test]
@@ -165,6 +168,126 @@ namespace ECS2D.Rendering.Tests
             Assert.That(spriteData.TranslationAndRotation.w, Is.EqualTo(math.radians(-30f)).Within(0.0001f));
             Assert.That(spriteData.Scale, Is.EqualTo(1.75f).Within(0.0001f));
             Assert.IsFalse(entityManager.IsComponentEnabled<SpriteCullState>(entity));
+        }
+
+        [Test]
+        public void SpriteTransformSyncSystem_HigherSortingLayerProducesHigherRenderDepthAcrossSheets()
+        {
+            using var world = new World("SpriteTransformSyncSortingLayerTests");
+            var entityManager = world.EntityManager;
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+
+            Entity lowerLayer = CreateLocalToWorldDrivenSprite(world);
+            Entity higherLayer = CreateLocalToWorldDrivenSprite(world);
+
+            entityManager.SetComponentData(lowerLayer, new LocalToWorld
+            {
+                Value = float4x4.TRS(new float3(0f, 1f, 0f), quaternion.identity, new float3(1f, 1f, 1f))
+            });
+            entityManager.SetComponentData(higherLayer, new LocalToWorld
+            {
+                Value = float4x4.TRS(new float3(0f, 1f, 0f), quaternion.identity, new float3(1f, 1f, 1f))
+            });
+
+            SpriteData lowerData = entityManager.GetComponentData<SpriteData>(lowerLayer);
+            lowerData.SpriteSheetId = 2;
+            lowerData.SortingLayer = 0;
+            entityManager.SetComponentData(lowerLayer, lowerData);
+
+            SpriteData higherData = entityManager.GetComponentData<SpriteData>(higherLayer);
+            higherData.SpriteSheetId = 9;
+            higherData.SortingLayer = 3;
+            entityManager.SetComponentData(higherLayer, higherData);
+
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            lowerData = entityManager.GetComponentData<SpriteData>(lowerLayer);
+            higherData = entityManager.GetComponentData<SpriteData>(higherLayer);
+
+            Assert.That(higherData.RenderDepth, Is.GreaterThan(lowerData.RenderDepth));
+        }
+
+        [Test]
+        public void SpriteTransformSyncSystem_LowerYProducesHigherRenderDepthWithinSameLayer()
+        {
+            using var world = new World("SpriteTransformSyncVerticalSortingTests");
+            var entityManager = world.EntityManager;
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+
+            Entity upperSprite = CreateLocalToWorldDrivenSprite(world);
+            Entity lowerSprite = CreateLocalToWorldDrivenSprite(world);
+
+            entityManager.SetComponentData(upperSprite, new LocalToWorld
+            {
+                Value = float4x4.TRS(new float3(0f, 3f, 0f), quaternion.identity, new float3(1f, 1f, 1f))
+            });
+            entityManager.SetComponentData(lowerSprite, new LocalToWorld
+            {
+                Value = float4x4.TRS(new float3(0f, -2f, 0f), quaternion.identity, new float3(1f, 1f, 1f))
+            });
+
+            SpriteData upperData = entityManager.GetComponentData<SpriteData>(upperSprite);
+            upperData.SpriteSheetId = 4;
+            upperData.SortingLayer = 1;
+            entityManager.SetComponentData(upperSprite, upperData);
+
+            SpriteData lowerData = entityManager.GetComponentData<SpriteData>(lowerSprite);
+            lowerData.SpriteSheetId = 4;
+            lowerData.SortingLayer = 1;
+            entityManager.SetComponentData(lowerSprite, lowerData);
+
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            upperData = entityManager.GetComponentData<SpriteData>(upperSprite);
+            lowerData = entityManager.GetComponentData<SpriteData>(lowerSprite);
+
+            Assert.That(lowerData.RenderDepth, Is.GreaterThan(upperData.RenderDepth));
+        }
+
+        [Test]
+        public void SpriteTransformSyncSystem_EqualYAcrossSheetsUsesDeterministicSheetBias()
+        {
+            using var world = new World("SpriteTransformSyncTieBreakTests");
+            var entityManager = world.EntityManager;
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+
+            Entity leftSprite = CreateLocalToWorldDrivenSprite(world);
+            Entity rightSprite = CreateLocalToWorldDrivenSprite(world);
+
+            entityManager.SetComponentData(leftSprite, new LocalToWorld
+            {
+                Value = float4x4.TRS(new float3(-1f, 2f, 0f), quaternion.identity, new float3(1f, 1f, 1f))
+            });
+            entityManager.SetComponentData(rightSprite, new LocalToWorld
+            {
+                Value = float4x4.TRS(new float3(1f, 2f, 0f), quaternion.identity, new float3(1f, 1f, 1f))
+            });
+
+            SpriteData leftData = entityManager.GetComponentData<SpriteData>(leftSprite);
+            leftData.SpriteSheetId = 3;
+            leftData.SortingLayer = 2;
+            entityManager.SetComponentData(leftSprite, leftData);
+
+            SpriteData rightData = entityManager.GetComponentData<SpriteData>(rightSprite);
+            rightData.SpriteSheetId = 17;
+            rightData.SortingLayer = 2;
+            entityManager.SetComponentData(rightSprite, rightData);
+
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            leftData = entityManager.GetComponentData<SpriteData>(leftSprite);
+            rightData = entityManager.GetComponentData<SpriteData>(rightSprite);
+
+            Assert.That(leftData.RenderDepth, Is.Not.EqualTo(rightData.RenderDepth));
+            Assert.That(
+                leftData.RenderDepth,
+                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(2, 2f, 3)).Within(0.0001f));
+            Assert.That(
+                rightData.RenderDepth,
+                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(2, 2f, 17)).Within(0.0001f));
         }
 
         [Test]

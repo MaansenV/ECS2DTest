@@ -7,6 +7,7 @@ namespace ECS2D.Rendering
     public class SpriteDataAuthoring : MonoBehaviour
     {
         public SpriteSheetDefinition SpriteSheet;
+        public int SortingLayer;
         public int SpriteFrameIndex;
         public float BaseScale = 1f;
         public float4 Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -48,8 +49,10 @@ namespace ECS2D.Rendering
                     TranslationAndRotation = new float4(position.x, position.y, position.z, rotationRadians),
                     Scale = scale,
                     Color = authoring.Color,
+                    RenderDepth = SpriteSortingUtility.CalculateRenderDepth(authoring.SortingLayer, position.y, authoring.SpriteSheet.SheetId),
                     SpriteFrameIndex = spriteFrameIndex,
                     SpriteSheetId = authoring.SpriteSheet.SheetId,
+                    SortingLayer = authoring.SortingLayer,
                     FlipX = (byte)(flipX ? 1 : 0),
                     FlipY = (byte)(flipY ? 1 : 0)
                 };

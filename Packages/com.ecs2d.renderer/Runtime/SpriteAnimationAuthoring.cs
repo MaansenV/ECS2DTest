@@ -85,42 +85,20 @@ namespace ECS2D.Rendering
                 });
 
                 var spriteDataAuthoring = GetComponent<SpriteDataAuthoring>();
-                if (spriteDataAuthoring != null)
+                if (spriteDataAuthoring == null)
                 {
-                    if (spriteDataAuthoring.SpriteSheet != null && spriteDataAuthoring.SpriteSheet != authoring.AnimationSet.SpriteSheet)
-                    {
-                        Debug.LogWarning(
-                            $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' uses AnimationSet '{authoring.AnimationSet.name}' with SpriteSheet '{authoring.AnimationSet.SpriteSheet.name}', " +
-                            $"but {nameof(SpriteDataAuthoring)} is assigned to '{spriteDataAuthoring.SpriteSheet.name}'. The animation system will drive the final sheet id from the set.");
-                    }
-
+                    Debug.LogError(
+                        $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' requires {nameof(SpriteDataAuthoring)} on the same GameObject. " +
+                        $"{nameof(SpriteDataAuthoring)} owns sorting and base sprite rendering data.");
                     return;
                 }
 
-                Vector3 lossyScale = authoring.transform.lossyScale;
-                if (math.abs(lossyScale.x - lossyScale.y) > 0.0001f)
+                if (spriteDataAuthoring.SpriteSheet != null && spriteDataAuthoring.SpriteSheet != authoring.AnimationSet.SpriteSheet)
                 {
-                    Debug.LogWarning($"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' uses non-uniform scale. The renderer will use X scale for a uniform sprite size.");
+                    Debug.LogWarning(
+                        $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' uses AnimationSet '{authoring.AnimationSet.name}' with SpriteSheet '{authoring.AnimationSet.SpriteSheet.name}', " +
+                        $"but {nameof(SpriteDataAuthoring)} is assigned to '{spriteDataAuthoring.SpriteSheet.name}'. The animation system will drive the final sheet id from the set.");
                 }
-
-                bool flipX = lossyScale.x < 0f;
-                bool flipY = lossyScale.y < 0f;
-                float rotationRadians = math.radians(authoring.transform.eulerAngles.z);
-                float scale = math.abs(lossyScale.x);
-                Vector3 position = authoring.transform.position;
-
-                AddComponent(entity, new SpriteData
-                {
-                    TranslationAndRotation = new float4(position.x, position.y, position.z, rotationRadians),
-                    Scale = scale,
-                    Color = new float4(1f, 1f, 1f, 1f),
-                    SpriteFrameIndex = startFrameIndex,
-                    SpriteSheetId = authoring.AnimationSet.SpriteSheet.SheetId,
-                    FlipX = (byte)(flipX ? 1 : 0),
-                    FlipY = (byte)(flipY ? 1 : 0)
-                });
-                AddComponent<SpriteCullState>(entity);
-                AddSharedComponent(entity, SpriteSheetRuntime.CreateRenderKey(authoring.AnimationSet.SpriteSheet.SheetId));
             }
 
             private static bool TryCollectValidatedClips(SpriteAnimationAuthoring authoring, out List<ValidatedClip> validatedClips)

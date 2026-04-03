@@ -33,6 +33,7 @@
             StructuredBuffer<float4> uvBuffer;
             StructuredBuffer<int> frameIndexBuffer;
             StructuredBuffer<float2> flipBuffer;
+            StructuredBuffer<float> renderDepthBuffer;
 
             struct v2f {
                 float4 pos : SV_POSITION;
@@ -53,6 +54,7 @@
 
             v2f vert(appdata_full v, uint instanceID : SV_InstanceID) {
                 float4 translationAndRot = translationAndRotationBuffer[instanceID];
+                float renderDepth = renderDepthBuffer[instanceID];
                 int frameIndex = frameIndexBuffer[instanceID];
                 float4 uv = uvBuffer[frameIndex];
 
@@ -65,6 +67,8 @@
 
                 v2f o;
                 o.pos = UnityObjectToClipPos(float4(worldPosition, 1.0f));
+                float4 depthClipPos = UnityObjectToClipPos(float4(worldPosition.xy, renderDepth, 1.0f));
+                o.pos.z = depthClipPos.z;
 
                 // Apply UV transformation
                 o.uv = v.texcoord * uv.xy + uv.zw;
