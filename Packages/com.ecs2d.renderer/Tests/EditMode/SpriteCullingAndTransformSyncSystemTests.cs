@@ -44,6 +44,31 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
+        public void SpriteTransformSyncSystem_PreservesBaseScaleMultiplierDuringSync()
+        {
+            using var world = new World("SpriteTransformSyncSystemBaseScaleTests");
+            var entityManager = world.EntityManager;
+            var localToWorldSystem = world.GetOrCreateSystem<LocalToWorldSystem>();
+            var syncSystem = world.CreateSystem<SpriteTransformSyncSystem>();
+            Entity entity = CreateTransformDrivenSprite(world, baseScale: 1.5f);
+
+            entityManager.SetComponentData(
+                entity,
+                LocalTransform.FromPositionRotationScale(
+                    new float3(2f, 3f, 4f),
+                    quaternion.RotateZ(math.radians(45f)),
+                    2.5f));
+
+            localToWorldSystem.Update(world.Unmanaged);
+            syncSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            SpriteData spriteData = entityManager.GetComponentData<SpriteData>(entity);
+            Assert.That(spriteData.Scale, Is.EqualTo(3.75f).Within(0.0001f));
+            Assert.That(spriteData.BaseScale, Is.EqualTo(1.5f).Within(0.0001f));
+        }
+
+        [Test]
         public void SpriteTransformSyncSystem_PreservesFlipXFromNegativeXScale()
         {
             using var world = new World("SpriteTransformSyncSystemTests");
@@ -494,7 +519,7 @@ namespace ECS2D.Rendering.Tests
             baseIndices.Dispose();
         }
 
-        private static Entity CreateTransformDrivenSprite(World world)
+        private static Entity CreateTransformDrivenSprite(World world, float baseScale = 1f)
         {
             Entity entity = world.EntityManager.CreateEntity(
                 typeof(LocalTransform),
@@ -510,6 +535,7 @@ namespace ECS2D.Rendering.Tests
             world.EntityManager.SetComponentData(entity, new SpriteData
             {
                 TranslationAndRotation = float4.zero,
+                BaseScale = baseScale,
                 Scale = 1f,
                 Color = new float4(1f),
                 SpriteFrameIndex = 0,
@@ -519,7 +545,7 @@ namespace ECS2D.Rendering.Tests
             return entity;
         }
 
-        private static Entity CreateLocalToWorldDrivenSprite(World world)
+        private static Entity CreateLocalToWorldDrivenSprite(World world, float baseScale = 1f)
         {
             Entity entity = world.EntityManager.CreateEntity(
                 typeof(LocalToWorld),
@@ -533,6 +559,7 @@ namespace ECS2D.Rendering.Tests
             world.EntityManager.SetComponentData(entity, new SpriteData
             {
                 TranslationAndRotation = float4.zero,
+                BaseScale = baseScale,
                 Scale = 1f,
                 Color = new float4(1f),
                 SpriteFrameIndex = 0,
@@ -552,6 +579,7 @@ namespace ECS2D.Rendering.Tests
             world.EntityManager.SetComponentData(entity, new SpriteData
             {
                 TranslationAndRotation = new float4(position.x, position.y, 0f, 0f),
+                BaseScale = 1f,
                 Scale = scale,
                 Color = new float4(1f),
                 SpriteFrameIndex = 0,

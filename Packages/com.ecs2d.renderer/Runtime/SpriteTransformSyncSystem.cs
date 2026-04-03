@@ -49,8 +49,8 @@ namespace ECS2D.Rendering
                     }
                 }
 
-                spriteData.TranslationAndRotation = new float4(position, rotationRadians);
-                spriteData.Scale = scaleX;
+                spriteData.TranslationAndRotation = new float4(position, rotationRadians + spriteData.RotationOffsetRadians);
+                spriteData.Scale = scaleX * spriteData.BaseScale;
                 spriteData.RenderDepth = SpriteSortingUtility.CalculateRenderDepth(spriteData.SortingLayer, position.y, spriteData.SpriteSheetId, position.z);
             }
         }

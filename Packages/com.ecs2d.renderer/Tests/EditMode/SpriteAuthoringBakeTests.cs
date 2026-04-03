@@ -279,6 +279,43 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
+        public void SpriteDataAuthoring_BakesBaseScaleSeparatelyFromRuntimeScale()
+        {
+            using var world = new World("SpriteAuthoringBakeTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var root = new GameObject("SpriteAuthoringBaseScaleBakeTests");
+
+            try
+            {
+                SetField(sheet, "sheetId", 42);
+                SetField(sheet, "autoGenerateGridFrames", false);
+                SetField(sheet, "frames", new[] { new Vector4(1f, 1f, 0f, 0f) });
+
+                var authoring = root.AddComponent<SpriteDataAuthoring>();
+                authoring.SpriteSheet = sheet;
+                authoring.BaseScale = 1.5f;
+                root.transform.localScale = new Vector3(2f, 2f, 1f);
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, root);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                var bakedEntity = GetBakedEntity(bakingSystem, root);
+                var spriteData = world.EntityManager.GetComponentData<SpriteData>(bakedEntity);
+
+                Assert.AreEqual(1.5f, spriteData.BaseScale, 0.0001f);
+                Assert.AreEqual(3f, spriteData.Scale, 0.0001f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
         public void SpriteAnimationAuthoring_BakesFlipFromNegativeScale_WithoutSpriteDataAuthoring()
         {
             using var world = new World("SpriteAuthoringBakeTests");

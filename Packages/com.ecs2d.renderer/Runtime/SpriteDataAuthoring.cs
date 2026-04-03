@@ -40,13 +40,16 @@ namespace ECS2D.Rendering
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 int frameCount = math.max(1, authoring.SpriteSheet.FrameCount);
                 int spriteFrameIndex = math.clamp(authoring.SpriteFrameIndex, 0, frameCount - 1);
-                float rotationRadians = math.radians(authoring.transform.eulerAngles.z + authoring.RotationOffsetDegrees);
+                float rotationOffsetRadians = math.radians(authoring.RotationOffsetDegrees);
+                float rotationRadians = math.radians(authoring.transform.eulerAngles.z) + rotationOffsetRadians;
                 float scale = authoring.BaseScale * math.abs(lossyScale.x);
                 Vector3 position = authoring.transform.position;
 
                 var data = new SpriteData
                 {
                     TranslationAndRotation = new float4(position.x, position.y, position.z, rotationRadians),
+                    BaseScale = authoring.BaseScale,
+                    RotationOffsetRadians = rotationOffsetRadians,
                     Scale = scale,
                     Color = authoring.Color,
                     RenderDepth = SpriteSortingUtility.CalculateRenderDepth(authoring.SortingLayer, position.y, authoring.SpriteSheet.SheetId, position.z),
