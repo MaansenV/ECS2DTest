@@ -105,7 +105,7 @@ namespace ECS2D.Rendering.Tests
                 Assert.AreEqual(5, spriteData.SpriteFrameIndex);
                 Assert.AreEqual(2, spriteData.SortingLayer);
                 Assert.AreEqual(
-                    SpriteSortingUtility.CalculateRenderDepth(2, 0f, 7),
+                    SpriteSortingUtility.CalculateRenderDepth(2, 0f, 7, 0f),
                     spriteData.RenderDepth,
                     0.0001f);
                 Assert.IsTrue(world.EntityManager.HasComponent<SpriteCullState>(bakedEntity));
@@ -193,7 +193,7 @@ namespace ECS2D.Rendering.Tests
                 Assert.AreEqual(4, spriteData.SortingLayer);
                 Assert.AreEqual(7f, spriteData.TranslationAndRotation.z, 0.0001f);
                 Assert.AreEqual(
-                    SpriteSortingUtility.CalculateRenderDepth(4, -2f, 11),
+                    SpriteSortingUtility.CalculateRenderDepth(4, -2f, 11, 7f),
                     spriteData.RenderDepth,
                     0.0001f);
             }

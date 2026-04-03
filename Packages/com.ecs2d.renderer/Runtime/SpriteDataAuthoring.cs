@@ -49,7 +49,7 @@ namespace ECS2D.Rendering
                     TranslationAndRotation = new float4(position.x, position.y, position.z, rotationRadians),
                     Scale = scale,
                     Color = authoring.Color,
-                    RenderDepth = SpriteSortingUtility.CalculateRenderDepth(authoring.SortingLayer, position.y, authoring.SpriteSheet.SheetId),
+                    RenderDepth = SpriteSortingUtility.CalculateRenderDepth(authoring.SortingLayer, position.y, authoring.SpriteSheet.SheetId, position.z),
                     SpriteFrameIndex = spriteFrameIndex,
                     SpriteSheetId = authoring.SpriteSheet.SheetId,
                     SortingLayer = authoring.SortingLayer,

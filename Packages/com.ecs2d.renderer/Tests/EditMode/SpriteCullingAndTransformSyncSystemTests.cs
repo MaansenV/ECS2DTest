@@ -40,7 +40,7 @@ namespace ECS2D.Rendering.Tests
             Assert.That(spriteData.Scale, Is.EqualTo(2.5f).Within(0.0001f));
             Assert.That(
                 spriteData.RenderDepth,
-                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(spriteData.SortingLayer, 3f, spriteData.SpriteSheetId)).Within(0.0001f));
+                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(spriteData.SortingLayer, 3f, spriteData.SpriteSheetId, 4f)).Within(0.0001f));
         }
 
         [Test]
@@ -171,7 +171,7 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
-        public void SpriteTransformSyncSystem_HigherSortingLayerProducesHigherRenderDepthAcrossSheets()
+        public void SpriteTransformSyncSystem_HigherSortingLayerProducesLowerRenderDepthAcrossSheets()
         {
             using var world = new World("SpriteTransformSyncSortingLayerTests");
             var entityManager = world.EntityManager;
@@ -205,11 +205,11 @@ namespace ECS2D.Rendering.Tests
             lowerData = entityManager.GetComponentData<SpriteData>(lowerLayer);
             higherData = entityManager.GetComponentData<SpriteData>(higherLayer);
 
-            Assert.That(higherData.RenderDepth, Is.GreaterThan(lowerData.RenderDepth));
+            Assert.That(higherData.RenderDepth, Is.LessThan(lowerData.RenderDepth));
         }
 
         [Test]
-        public void SpriteTransformSyncSystem_LowerYProducesHigherRenderDepthWithinSameLayer()
+        public void SpriteTransformSyncSystem_LowerYProducesLowerRenderDepthWithinSameLayer()
         {
             using var world = new World("SpriteTransformSyncVerticalSortingTests");
             var entityManager = world.EntityManager;
@@ -243,7 +243,7 @@ namespace ECS2D.Rendering.Tests
             upperData = entityManager.GetComponentData<SpriteData>(upperSprite);
             lowerData = entityManager.GetComponentData<SpriteData>(lowerSprite);
 
-            Assert.That(lowerData.RenderDepth, Is.GreaterThan(upperData.RenderDepth));
+            Assert.That(lowerData.RenderDepth, Is.LessThan(upperData.RenderDepth));
         }
 
         [Test]
@@ -284,10 +284,10 @@ namespace ECS2D.Rendering.Tests
             Assert.That(leftData.RenderDepth, Is.Not.EqualTo(rightData.RenderDepth));
             Assert.That(
                 leftData.RenderDepth,
-                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(2, 2f, 3)).Within(0.0001f));
+                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(2, 2f, 3, 0f)).Within(0.0001f));
             Assert.That(
                 rightData.RenderDepth,
-                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(2, 2f, 17)).Within(0.0001f));
+                Is.EqualTo(SpriteSortingUtility.CalculateRenderDepth(2, 2f, 17, 0f)).Within(0.0001f));
         }
 
         [Test]
