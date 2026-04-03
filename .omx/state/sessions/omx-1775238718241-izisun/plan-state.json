@@ -1,0 +1,42 @@
+{
+  "active": false,
+  "task_description": "Consensus plan for performant global SortingLayer + intra-layer Y sorting in ECS sprite renderer",
+  "current_phase": "completed",
+  "started_at": "2026-04-03T18:06:00Z",
+  "iteration": 10,
+  "last_turn_at": "2026-04-03T18:06:50.443Z",
+  "completed_at": "2026-04-03T18:12:00Z",
+  "artifacts": {
+    "prd": ".omx/plans/prd-sprite-sorting-renderer.md",
+    "test_spec": ".omx/plans/test-spec-sprite-sorting-renderer.md",
+    "source_spec": ".omx/specs/deep-interview-sprite-sorting-renderer.md"
+  },
+  "consensus_status": "approved-with-integrated-architectural-guardrails",
+  "recommended_next": "$ralph .omx/plans/prd-sprite-sorting-renderer.md",
+  "consensus": {
+    "planner": "complete",
+    "architect": "complete",
+    "critic": "approve"
+  },
+  "chosen_option": "dedicated render-depth derived from SortingLayer + Y",
+  "rejected_options": [
+    "Global layer buckets only",
+    "Full gather/sort/permute with dirty cache in v1"
+  ],
+  "result": "approved consensus plan",
+  "rejected_primary_options": [
+    "per-sheet/global CPU gather-sort-permute for v1",
+    "full Unity SortingLayer parity",
+    "OrderInLayer in v1",
+    "dirty/cache as primary v1 path"
+  ],
+  "consensus_summary": {
+    "chosen_option": "Dedicated render-depth key derived from SortingLayer + vertical order",
+    "rejected_default": "Per-frame CPU sort/permute with dirty caching as v1",
+    "key_risks": [
+      "depth precision / z-fighting",
+      "vertical anchor choice",
+      "world-Z semantic conflicts"
+    ]
+  }
+}

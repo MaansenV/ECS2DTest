@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "active": true,
+  "skill": "deep-interview",
+  "keyword": "$deep-interview",
+  "phase": "planning",
+  "activated_at": "2026-04-03T22:09:53.671Z",
+  "updated_at": "2026-04-03T22:09:53.671Z",
+  "source": "keyword-detector",
+  "session_id": "",
+  "thread_id": "019d5565-1389-7a50-83c2-0087de329b83",
+  "turn_id": "019d5565-2b6d-7640-8b3a-64d44e3cd2d7",
+  "input_lock": {
+    "active": true,
+    "scope": "deep-interview-auto-approval",
+    "acquired_at": "2026-04-03T22:09:53.671Z",
+    "blocked_inputs": [
+      "yes",
+      "y",
+      "proceed",
+      "continue",
+      "ok",
+      "sure",
+      "go ahead",
+      "next i should"
+    ],
+    "message": "Deep interview is active; auto-approval shortcuts are blocked until the interview finishes."
+  }
+}

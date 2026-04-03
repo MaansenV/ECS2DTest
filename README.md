@@ -58,6 +58,8 @@ using ECS2D.Rendering;
 
 For a detailed guide with short code snippets on how everything is used, check out the **[DOCUMENTATION.md](DOCUMENTATION.md)**.
 
+Release automation for agents and maintainers lives in **[docs/release-workflow.md](docs/release-workflow.md)**.
+
 ## Quick usage
 
 1. Install the package.

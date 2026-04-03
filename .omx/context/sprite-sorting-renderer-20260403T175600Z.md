@@ -1,0 +1,26 @@
+# Context Snapshot
+- Task statement: Performante Sorting-Funktion für den bestehenden ECS2D-Sprite-Renderer ergänzen.
+- Desired outcome: Klare Anforderungen für ein Sorting-Feature, das bei >20k Sprites korrekt und performant bleibt.
+- Stated solution: Der Renderer hat aktuell kein Sorting; es existiert ein fremder Plan unter c:\Users\viola\.cursor\plans\sprite_render-reihenfolge_d540536e.plan.md, dem der Nutzer nicht vertraut.
+- Probable intent hypothesis: Klassische 2D-Reihenfolge (z. B. Layer / Y-Sort / Order) kontrollieren, ohne den aktuellen instanzierten GPU-Renderpfad unnötig zu verlangsamen.
+- Known facts/evidence:
+  - Brownfield-Projekt: Runtime-Renderer in Packages/com.ecs2d.renderer/Runtime/SpriteSystem.cs.
+  - Rendering läuft pro SpriteSheet-Gruppe mit DrawMeshInstancedIndirect und ComputeBuffers.
+  - SpriteData enthält derzeit keinen expliziten Sort-Key.
+  - Sichtbare Reihenfolge folgt aktuell effektiv Upload-/Buffer-Reihenfolge und/oder Welt-Z aus TranslationAndRotation.
+  - Der vorhandene Fremd-Plan empfiehlt Sort-Key + Gather/Sort/Permute pro Sheet, optional Dirty-Cache v2.
+- Constraints:
+  - Performance ist kritisch; Zielgröße >20k Sprites.
+  - Deep-interview-Modus: nur Klärung/Spezifikation, keine Implementierung.
+- Unknowns/open questions:
+  - Welche Sort-Semantik wird wirklich benötigt (manueller Layer/Order, Y-Sort, Z-Sort, Mischform)?
+  - Muss Sorting nur innerhalb eines SpriteSheets gelten oder auch zwischen verschiedenen Sheets/Materialien?
+  - Wie viel CPU-Budget ist akzeptabel, und wie dynamisch ändern sich Sort-Keys pro Frame?
+- Decision-boundary unknowns:
+  - Darf OMX API/Form des Sort-Keys frei wählen?
+  - Darf v1 nur intra-sheet lösen und inter-sheet später?
+- Likely codebase touchpoints:
+  - Packages/com.ecs2d.renderer/Runtime/SpriteSystem.cs
+  - Packages/com.ecs2d.renderer/Runtime/SpriteData.cs
+  - Packages/com.ecs2d.renderer/Runtime/SpriteDataAuthoring.cs
+  - ggf. Tests unter Packages/com.ecs2d.renderer/Tests/EditMode/

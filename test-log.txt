@@ -1,0 +1,25 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.3/staging' branch; Version is '6000.3.10f1 (e35f0c77bd8e) revision 14901004'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.22631) Professional' Language: 'de' Physical Memory: 49095 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-03-31T07:25:25Z
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-viola" at "2026-03-31T07:25:25.3563873Z"
+
+COMMAND LINE ARGUMENTS:
+H:\Programs\Unity\6000.3.10f1\Editor\Unity.exe
+-batchmode
+-nographics
+-runTests
+-testPlatform
+EditMode
+-projectPath
+H:\UnityProjects\Projects\ECS2DTest
+-testResults
+H:\UnityProjects\Projects\ECS2DTest\test-results.xml
+-logFile
+H:\UnityProjects\Projects\ECS2DTest\test-log.txt
+Successfully changed project path to: H:\UnityProjects\Projects\ECS2DTest
+H:/UnityProjects/Projects/ECS2DTest
+Exiting without the bug reporter. Application will terminate with return code 1

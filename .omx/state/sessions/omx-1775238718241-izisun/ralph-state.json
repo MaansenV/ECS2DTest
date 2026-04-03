@@ -1,0 +1,9 @@
+{
+  "active": true,
+  "iteration": 7,
+  "max_iterations": 10,
+  "current_phase": "fixing",
+  "task_description": "Fix reversed SortingLayer/render depth direction",
+  "started_at": "2026-04-03T18:35:39.179Z",
+  "last_turn_at": "2026-04-03T22:09:53.660Z"
+}

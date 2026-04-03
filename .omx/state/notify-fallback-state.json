@@ -1,0 +1,67 @@
+{
+  "pid": 39688,
+  "parent_pid": 28184,
+  "started_at": "2026-04-03T17:51:58.854Z",
+  "cwd": "H:\\UnityProjects\\Projects\\ECS2DTest",
+  "notify_script": "C:\\Users\\viola\\AppData\\Roaming\\npm\\node_modules\\oh-my-codex\\dist\\scripts\\notify-hook.js",
+  "poll_ms": 250,
+  "pid_file": "H:\\UnityProjects\\Projects\\ECS2DTest\\.omx\\state\\notify-fallback.pid",
+  "max_lifetime_ms": 21600000,
+  "tracked_files": 11,
+  "seen_turns": 20,
+  "dispatch_drain": {
+    "enabled": true,
+    "max_per_tick": 5,
+    "run_count": 23330,
+    "leader_only": true,
+    "last_tick_at": "2026-04-03T19:36:17.159Z",
+    "last_result": {
+      "processed": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    "last_error": null
+  },
+  "leader_nudge": {
+    "enabled": true,
+    "leader_only": true,
+    "stale_threshold_ms": 180000,
+    "precomputed_leader_stale": false,
+    "last_tick_at": "2026-04-03T19:36:17.160Z",
+    "last_error": null,
+    "run_count": 23330
+  },
+  "ralph_continue_steer": {
+    "enabled": true,
+    "cadence_ms": 60000,
+    "message": "Ralph loop active continue",
+    "active": true,
+    "last_state_check_at": "2026-04-03T19:36:17.172Z",
+    "last_sent_at": "",
+    "cooldown_anchor_at": "2026-04-03T17:51:58.854Z",
+    "last_reason": "progress_missing",
+    "last_error": null,
+    "state_path": "H:\\UnityProjects\\Projects\\ECS2DTest\\.omx\\state\\sessions\\omx-1775238718241-izisun\\ralph-state.json",
+    "pane_id": "",
+    "pane_current_command": "",
+    "current_phase": "fixing",
+    "shared_timestamp_path": "H:\\UnityProjects\\Projects\\ECS2DTest\\.omx\\state\\ralph-last-steer-at",
+    "shared_last_sent_at": "",
+    "singleton_lock_path": "H:\\UnityProjects\\Projects\\ECS2DTest\\.omx\\state\\ralph-continue-steer.lock"
+  },
+  "fallback_auto_nudge": {
+    "enabled": true,
+    "stall_ms": 5000,
+    "last_tick_at": "2026-04-03T19:36:17.162Z",
+    "last_turn_at": "2026-04-03T19:35:02.997Z",
+    "last_turn_count": 29,
+    "last_message": "Schon erledigt.\n\n- **Package-Version:** `1.0.3`\n- **Commit:** `accead3`\n- **Push:** nach `origin/mas",
+    "last_reason": "eligible_but_not_sent",
+    "last_error": null,
+    "last_nudged_signature": "",
+    "last_nudged_at": ""
+  },
+  "stop_reason": "parent_gone",
+  "stop_signal": null,
+  "stopping": true
+}
