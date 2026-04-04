@@ -1,0 +1,17 @@
+{
+  "active": false,
+  "started_at": "2026-04-04T09:00:00+02:00",
+  "current_phase": "completed",
+  "task_description": "Consensus planning for reusable DOTS 2D particle system",
+  "source_spec": ".omx/specs/deep-interview-particle-system-2d-dots.md",
+  "planner_status": "completed",
+  "architect_status": "completed",
+  "critic_status": "approved",
+  "completed_at": "2026-04-04T09:12:00+02:00",
+  "critic_verdict": "APPROVE",
+  "artifacts": [
+    ".omx/plans/prd-dots-particle-system.md",
+    ".omx/plans/test-spec-dots-particle-system.md"
+  ],
+  "notes": "Finalized plan explicitly includes per-emitter pools, LocalToWorld authority, deterministic RNG, drop-on-full overflow, frozen resting semantics, sprite-sheet/frame source, and world-space simulation after spawn."
+}

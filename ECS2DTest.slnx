@@ -87,8 +87,8 @@
   <Project Path="Unity.Profiling.Core.csproj" />
   <Project Path="Unity.2D.Aseprite.Common.csproj" />
   <Project Path="Unity.CollabProxy.Editor.csproj" />
-  <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="ECS2D.Rendering.Tests.csproj" />
+  <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="Unity.Core.Editor.csproj" />
   <Project Path="Unity.Mathematics.Extensions.csproj" />
   <Project Path="Unity.2D.PixelPerfect.csproj" />

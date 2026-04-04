@@ -1,90 +1,135 @@
 {
   "active": false,
   "current_phase": "completed",
-  "started_at": "2026-04-03T17:56:00Z",
-  "task_description": "Clarify requirements for performant sprite sorting in existing ECS renderer with >20k sprites",
-  "interview_id": "deepint-sprite-sorting-20260403",
+  "started_at": "2026-04-04T00:10:19+02:00",
+  "task_description": "Basic 2D DOTS particle system for existing renderer with burst/rate/max/lifetime/speed/scale/color/spawn-shapes and randomization",
+  "interview_id": "particle-system-2d-dots-20260403T221019Z",
   "profile": "standard",
   "type": "brownfield",
-  "initial_idea": "ich möchte ein sorting funktion einfügen, aktuell hat mein renderer kein sorting, wichtig ist dabei, das es performant ist da ist über 20k sprite renderen werde; existing external plan not trusted",
+  "initial_idea": "ich möchte für mein renderer nun ein basic 2d parrticle system in dots erstellen, das super perfomant ist.",
   "rounds": [
     {
       "round": 1,
-      "target": "outcome/scope",
-      "question": "Welche konkrete Sort-Regel willst du am Ende wirklich haben?",
-      "answer": "Mit sorting meine ich, man kann aussuchen wie bei SpriteRenderer ob ein sprite immer über sprite x gerendert wird. Aktuell wird das glaube ich nur über y entschieden was ok ist, aber ich brauche noch layer mäßig.",
+      "question": "Soll dieses erste Partikelsystem direkt als wiederverwendbares Feature im Paket `com.ecs2d.renderer` entstehen, oder bewusst erst als projekt-/sample-spezifisches System unter `Assets`?",
+      "answer": "wiederverwendbar",
+      "target_dimension": "scope / decision boundaries",
+      "ambiguity_after": 0.77,
       "scores": {
-        "intent": 0.5,
-        "outcome": 0.55,
-        "scope": 0.45,
-        "constraints": 0.55,
-        "success": 0.25,
-        "context": 0.75
+        "intent": 0.55,
+        "outcome": 0.65,
+        "scope": 0.62,
+        "constraints": 0.5,
+        "success": 0.38,
+        "context": 0.78
       },
-      "notes": "User wants explicit layer-like control similar to SpriteRenderer, likely in addition to existing perceived Y-based ordering."
+      "readiness": {
+        "non_goals": false,
+        "decision_boundaries": true
+      },
+      "notes": "User wants package-level reusable solution, not sample-only implementation."
     },
     {
       "round": 2,
-      "target": "scope",
-      "question": "Soll die Regel am Ende so sein: Sorting Layer / Order gewinnt immer zuerst, und Y-Sort gilt nur noch innerhalb derselben Layer/Order-Gruppe?",
-      "answer": "ja",
+      "question": "Welche 1-3 Dinge sollen wir in der ersten Version ganz bewusst noch nicht bauen, obwohl sie für ein späteres V2-Partikelsystem denkbar wären?",
+      "answer": "mehr als 1 shape support, circle riecht aus, damit meine ich wie bei shuriken unity, da gibt es spawn shapes die angeben wie die sachen spawnen in welchen beriechen. kein nouse, es soll basic sein",
+      "target_dimension": "non-goals",
+      "ambiguity_after": 0.67,
       "scores": {
-        "intent": 0.55,
-        "outcome": 0.8,
-        "scope": 0.72,
-        "constraints": 0.6,
-        "success": 0.35,
-        "context": 0.78
+        "intent": 0.56,
+        "outcome": 0.68,
+        "scope": 0.7,
+        "constraints": 0.53,
+        "success": 0.4,
+        "context": 0.8
       },
-      "notes": "Confirmed precedence: sorting layer/order first, Y-sort only within same group."
+      "readiness": {
+        "non_goals": false,
+        "decision_boundaries": true
+      },
+      "notes": "User wants V1 to stay basic and avoid feature bloat; answer is partially ambiguous because shape-support wording may conflict with initial requested Point/Circle/Box scope."
     },
     {
       "round": 3,
-      "target": "scope/api-minimum",
-      "question": "Willst du genau dieses 3-stufige Verhalten für v1?",
-      "answer": "wozu brauchen wir OrderInLayer? ich brauche SortingLayer? danach soll weiterhin über y geregelt werden wie gerade?",
+      "question": "Soll V1 jetzt wirklich `Point + Circle + Box` als Spawn-Shapes haben, oder willst du für den allerersten Wurf bewusst nur `Circle` und die anderen Shapes erstmal nicht?",
+      "answer": "nur circle shape",
+      "target_dimension": "non-goals clarification",
+      "ambiguity_after": 0.57,
       "scores": {
-        "intent": 0.6,
-        "outcome": 0.86,
-        "scope": 0.82,
-        "constraints": 0.66,
-        "success": 0.45,
-        "context": 0.8
+        "intent": 0.58,
+        "outcome": 0.72,
+        "scope": 0.84,
+        "constraints": 0.58,
+        "success": 0.42,
+        "context": 0.82
       },
-      "notes": "User prefers v1 with SortingLayer only, then existing Y-based behavior within each layer."
+      "readiness": {
+        "non_goals": true,
+        "decision_boundaries": true
+      },
+      "notes": "V1 shape scope narrowed to Circle only; Point and Box are out of scope."
     },
     {
       "round": 4,
-      "target": "decision-boundary",
-      "question": "Muss dein SortingLayer auch zwischen verschiedenen SpriteSheets/Material-Gruppen gelten?",
-      "answer": "aufjedenfall",
+      "question": "Was ist der wichtigste Effekt-Typ, den dieses erste System überzeugend können muss: eher `Explosion/Impact`, eher `dauerhafte Ambient-Partikel` wie Staub/Rauch, oder eher `beides gleich gut`?",
+      "answer": "beides gleich gut, ich plane es als erstes für ambiente particle zu nutzen, sowie aber auch als blut effekte bei impact mit burst dazu bracht es support für random values wie speed, damit die particle nicht alle schnell sind und lifetime mit scale down support damit die verschwinden nach x sekunden, jedoch perfomant, eventuell lasse ich es zz.b 2 minuten laufen da muss es nicht jedenfram gecheckt wertden das muss klug sein",
+      "target_dimension": "intent/outcome with assumption probe",
+      "ambiguity_after": 0.41,
       "scores": {
-        "intent": 0.65,
-        "outcome": 0.9,
-        "scope": 0.9,
-        "constraints": 0.75,
-        "success": 0.52,
-        "context": 0.85
+        "intent": 0.82,
+        "outcome": 0.84,
+        "scope": 0.85,
+        "constraints": 0.72,
+        "success": 0.55,
+        "context": 0.84
       },
-      "notes": "Cross-sheet ordering is mandatory; layer precedence must work globally, not only within a sheet."
+      "readiness": {
+        "non_goals": true,
+        "decision_boundaries": true
+      },
+      "notes": "System must support both looping ambient and burst impacts, with randomized speed/lifetime and scale-down over lifetime. Strong performance concern around long-running emitters and avoiding naive per-frame heavy work."
     },
     {
       "round": 5,
-      "target": "non-goals",
-      "question": "Für v1: Soll ich bewusst nicht versuchen, echte Unity-SortingLayer-Namen/Editor-Integration wie beim SpriteRenderer nachzubauen, sondern erstmal nur eine eigene ECS-SortingLayer-Zahl einführen?",
-      "answer": "ja kleine perfomnte eigenlösung",
+      "question": "Wenn du sagst “nicht jeden Frame gecheckt”, was ist die eigentliche harte Grenze für V1: Soll das System trotzdem jede Frame simulieren, aber intern extrem billig sein, oder willst du wirklich eine Architektur, bei der langlebige Ambient-Partikel nicht pro Frame pro Partikel upgedatet werden?",
+      "answer": "das weiß ich nicht genau, z.b wenn bei blut, wenn der impact war und ich es als \"decal particle\" einfach 2 min nicht despawn lasse und dann sich auch nicht bewegt, braucht es kein check jeden frame, anders ist wenn ambiente particle herum fliegen da muss es ja jeden frame sein oder?",
+      "target_dimension": "constraints/success clarification",
+      "ambiguity_after": 0.31,
       "scores": {
-        "intent": 0.74,
-        "outcome": 0.93,
-        "scope": 0.95,
-        "constraints": 0.9,
-        "success": 0.62,
-        "context": 0.88
+        "intent": 0.84,
+        "outcome": 0.86,
+        "scope": 0.86,
+        "constraints": 0.83,
+        "success": 0.63,
+        "context": 0.85
       },
-      "notes": "Non-goal confirmed: no full Unity SpriteRenderer sorting-layer integration in v1; prefer small performant custom integer-based layer solution."
+      "readiness": {
+        "non_goals": true,
+        "decision_boundaries": true
+      },
+      "notes": "User accepts two lifecycle classes by behavior: moving particles need per-frame simulation; settled/static 'decal-like' particles should become very cheap and avoid unnecessary updates."
+    },
+    {
+      "round": 6,
+      "question": "Soll V1 solche “decal-artigen” ruhenden Blutpartikel schon ausdrücklich unterstützen, oder reicht es für die erste Version, wenn alle Partikel einfach einheitlich simuliert werden und wir diese Optimierung erst in V2 machen?",
+      "answer": "ruhe phasen soll es schon unterstüzden, könnte man lösen in dem wir auch speed in/out eases hat, so das ich es auf x sekunden easen kann und zeitgleich gebe ich an in wievielen sekunden es in die ruhe phase geht",
+      "target_dimension": "success criteria / constraints",
+      "ambiguity_after": 0.22,
+      "scores": {
+        "intent": 0.86,
+        "outcome": 0.88,
+        "scope": 0.88,
+        "constraints": 0.9,
+        "success": 0.78,
+        "context": 0.86
+      },
+      "readiness": {
+        "non_goals": true,
+        "decision_boundaries": true
+      },
+      "notes": "V1 must support a rest phase. User suggests speed ease in/out and an explicit time-to-rest parameter so particles can settle and then stop needing active simulation."
     }
   ],
-  "current_ambiguity": 0.1,
+  "current_ambiguity": 0.16,
   "threshold": 0.2,
   "max_rounds": 12,
   "challenge_modes_used": [
@@ -92,21 +137,30 @@
     "simplifier"
   ],
   "codebase_context": {
-    "renderer": "Packages/com.ecs2d.renderer/Runtime/SpriteSystem.cs",
-    "spriteData": "Packages/com.ecs2d.renderer/Runtime/SpriteData.cs",
-    "authoring": "Packages/com.ecs2d.renderer/Runtime/SpriteDataAuthoring.cs",
-    "external_plan": "c:\\Users\\viola\\.cursor\\plans\\sprite_render-reihenfolge_d540536e.plan.md"
+    "renderer_package": "Packages/com.ecs2d.renderer",
+    "key_runtime_files": [
+      "Packages/com.ecs2d.renderer/Runtime/SpriteData.cs",
+      "Packages/com.ecs2d.renderer/Runtime/SpriteSystem.cs",
+      "Packages/com.ecs2d.renderer/Runtime/SpriteTransformSyncSystem.cs"
+    ],
+    "existing_spawn_sample": [
+      "Assets/Scripts/System/SpawnSystem.cs",
+      "Assets/Scripts/System/SpawnSettings.cs"
+    ],
+    "evidence": "Renderer currently batches SpriteData via indirect instancing; no particle runtime found in repo."
   },
-  "current_stage": "feasibility",
-  "current_focus": "success-criteria",
-  "context_snapshot_path": ".omx/context/sprite-sorting-renderer-20260403T175600Z.md",
-  "iteration": 7,
-  "last_turn_at": "2026-04-03T18:03:09.063Z",
-  "completed_at": "2026-04-03T18:01:00Z",
+  "current_stage": "completed",
+  "current_focus": "handoff",
+  "context_snapshot_path": ".omx/context/particle-system-2d-dots-20260403T221019Z.md",
+  "iteration": 14,
+  "last_turn_at": "2026-04-03T22:20:56.716Z",
+  "completed_at": "2026-04-04T08:52:40+02:00",
   "artifact_paths": {
     "context_snapshot": ".omx/context/sprite-sorting-renderer-20260403T175600Z.md",
     "interview": ".omx/interviews/sprite-sorting-renderer-20260403T180100Z.md",
     "spec": ".omx/specs/deep-interview-sprite-sorting-renderer.md"
   },
-  "handoff_recommendation": "$ralplan"
+  "handoff_recommendation": "$ralplan",
+  "transcript_path": ".omx/interviews/particle-system-2d-dots-20260404T065240Z.md",
+  "spec_path": ".omx/specs/deep-interview-particle-system-2d-dots.md"
 }

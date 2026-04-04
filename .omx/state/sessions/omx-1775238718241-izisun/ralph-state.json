@@ -1,9 +1,22 @@
 {
   "active": true,
-  "iteration": 7,
+  "iteration": 4,
   "max_iterations": 10,
-  "current_phase": "fixing",
-  "task_description": "Fix reversed SortingLayer/render depth direction",
-  "started_at": "2026-04-03T18:35:39.179Z",
-  "last_turn_at": "2026-04-03T22:09:53.660Z"
+  "current_phase": "verifying",
+  "task_description": "Implement reusable DOTS 2D particle system from .omx/plans/prd-dots-particle-system.md",
+  "started_at": "2026-04-04T09:20:00+02:00",
+  "last_turn_at": "2026-04-04T10:08:39.463Z",
+  "max_iterations_auto_expand_count": 2,
+  "max_iterations_auto_expanded_at": "2026-04-04T07:03:22.243Z",
+  "context_snapshot_path": ".omx/context/particle-system-2d-dots-20260403T221019Z.md",
+  "plan_path": ".omx/plans/prd-dots-particle-system.md",
+  "test_spec_path": ".omx/plans/test-spec-dots-particle-system.md",
+  "deslop_pass": "completed on changed particle files",
+  "error": "Unity EditMode tests are blocked because another Unity instance has the project open.",
+  "verification": {
+    "unity_compile_log": "H:\\UnityProjects\\Projects\\ECS2DTest\\Logs\\particle-compile.log",
+    "unity_batch_test_log": "H:\\UnityProjects\\Projects\\ECS2DTest\\Logs\\particle-tests.log",
+    "unity_batch_test_results": "H:\\UnityProjects\\Projects\\ECS2DTest\\Logs\\particle-tests.xml",
+    "blocker": "Another Unity instance is currently holding the project lock, so batch EditMode tests abort immediately."
+  }
 }

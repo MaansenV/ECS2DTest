@@ -1,5 +1,5 @@
 {
-  "last_turn_at": "2026-04-03T22:09:53.662Z",
-  "turn_count": 30,
-  "last_agent_output": "{\"title\":\"Erstelle 2D-Particlesystem\"}"
+  "last_turn_at": "2026-04-04T10:08:39.466Z",
+  "turn_count": 61,
+  "last_agent_output": "{\"message\":\"Add DOTS particle system support and edit mode tests\"}"
 }
