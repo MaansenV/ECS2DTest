@@ -10,6 +10,9 @@ namespace Systems
         public bool Enabled = true;
         public GameObject Prefab;
 
+        [Header("Emitter")]
+        public GameObject EmitterPrefab;
+
         [Header("Grid Spawn")]
         public int GridRows = 100;
         public int GridColumns = 100;
@@ -47,9 +50,17 @@ namespace Systems
                 prefabEntity = GetEntity(authoring.Prefab, TransformUsageFlags.Dynamic);
             }
 
+            var emitterPrefabEntity = Entity.Null;
+            if (authoring.EmitterPrefab != null)
+            {
+                DependsOn(authoring.EmitterPrefab);
+                emitterPrefabEntity = GetEntity(authoring.EmitterPrefab, TransformUsageFlags.Dynamic);
+            }
+
             AddComponent(entity, new SpawnPrefabReferences
             {
-                PrefabEntity = prefabEntity
+                PrefabEntity = prefabEntity,
+                EmitterPrefabEntity = emitterPrefabEntity
             });
         }
     }

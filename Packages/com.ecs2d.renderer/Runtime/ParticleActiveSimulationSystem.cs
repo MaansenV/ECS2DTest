@@ -10,70 +10,72 @@ namespace ECS2D.Rendering
     [UpdateAfter(typeof(ParticleEmissionSystem))]
     public partial struct ParticleActiveSimulationSystem : ISystem
     {
-        [BurstCompile]
-        private partial struct SimulateActiveParticlesJob : IJobEntity
-        {
-            public float DeltaTime;
-
-            private void Execute(
-                ref ParticleRuntime runtime,
-                ref SpriteData spriteData,
-                ref LocalToWorld localToWorld,
-                EnabledRefRW<ParticleActive> active,
-                EnabledRefRW<ParticleResting> resting,
-                EnabledRefRW<SpriteCullState> cullState)
-            {
-                if (!active.ValueRO)
-                {
-                    return;
-                }
-
-                runtime.Age += DeltaTime;
-                if (runtime.Age >= runtime.Lifetime)
-                {
-                    runtime.LifecycleState = (byte)ParticleLifecycleState.Inactive;
-                    runtime.CurrentSpeed = 0f;
-                    runtime.Velocity = float2.zero;
-                    spriteData.Scale = 0f;
-                    spriteData.Color = float4.zero;
-                    active.ValueRW = false;
-                    resting.ValueRW = false;
-                    cullState.ValueRW = false;
-                    return;
-                }
-
-                float speedMultiplier = ParticleSpawnUtility.EvaluateSpeedMultiplier(runtime.Age, runtime.RestAfterSeconds);
-                float nextSpeed = runtime.InitialSpeed * speedMultiplier;
-                float2 movement = runtime.Velocity * speedMultiplier * DeltaTime;
-                runtime.Position += new float3(movement, 0f);
-                runtime.RotationRadians += runtime.RotationSpeedRadians * DeltaTime;
-                runtime.CurrentSpeed = nextSpeed;
-
-                ParticleSpawnUtility.WriteRenderState(ref runtime, ref spriteData, ref localToWorld);
-
-                if (runtime.RestAfterSeconds > 0f && runtime.Age >= runtime.RestAfterSeconds)
-                {
-                    runtime.LifecycleState = (byte)ParticleLifecycleState.Resting;
-                    runtime.CurrentSpeed = 0f;
-                    runtime.Velocity = float2.zero;
-                    active.ValueRW = false;
-                    resting.ValueRW = true;
-                }
-            }
-        }
-
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<ParticleEmitter>();
+            state.RequireForUpdate<ParticleRuntime>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            state.Dependency = new SimulateActiveParticlesJob
+            float deltaTime = SystemAPI.Time.DeltaTime;
+
+            foreach (var (runtime, spriteData, localToWorld, active, resting, cullState) in SystemAPI.Query<
+                RefRW<ParticleRuntime>,
+                RefRW<SpriteData>,
+                RefRW<LocalToWorld>,
+                EnabledRefRW<ParticleActive>,
+                EnabledRefRW<ParticleResting>,
+                EnabledRefRW<SpriteCullState>>()
+                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
             {
-                DeltaTime = SystemAPI.Time.DeltaTime
-            }.ScheduleParallel(state.Dependency);
+                if (!active.ValueRO)
+                {
+                    continue;
+                }
+
+                ParticleRuntime particleRuntime = runtime.ValueRW;
+                SpriteData renderData = spriteData.ValueRW;
+                LocalToWorld currentLocalToWorld = localToWorld.ValueRW;
+
+                particleRuntime.Age += deltaTime;
+                if (particleRuntime.Age >= particleRuntime.Lifetime)
+                {
+                    particleRuntime.LifecycleState = (byte)ParticleLifecycleState.Inactive;
+                    particleRuntime.CurrentSpeed = 0f;
+                    particleRuntime.Velocity = float2.zero;
+                    renderData.Scale = 0f;
+                    renderData.Color = float4.zero;
+                    runtime.ValueRW = particleRuntime;
+                    spriteData.ValueRW = renderData;
+                    active.ValueRW = false;
+                    resting.ValueRW = false;
+                    cullState.ValueRW = false;
+                    continue;
+                }
+
+                float speedMultiplier = ParticleSpawnUtility.EvaluateSpeedMultiplier(particleRuntime.Age, particleRuntime.RestAfterSeconds);
+                float nextSpeed = particleRuntime.InitialSpeed * speedMultiplier;
+                float2 movement = particleRuntime.Velocity * speedMultiplier * deltaTime;
+                particleRuntime.Position += new float3(movement, 0f);
+                particleRuntime.RotationRadians += particleRuntime.RotationSpeedRadians * deltaTime;
+                particleRuntime.CurrentSpeed = nextSpeed;
+
+                ParticleSpawnUtility.WriteRenderState(ref particleRuntime, ref renderData, ref currentLocalToWorld);
+
+                if (particleRuntime.RestAfterSeconds > 0f && particleRuntime.Age >= particleRuntime.RestAfterSeconds)
+                {
+                    particleRuntime.LifecycleState = (byte)ParticleLifecycleState.Resting;
+                    particleRuntime.CurrentSpeed = 0f;
+                    particleRuntime.Velocity = float2.zero;
+                    active.ValueRW = false;
+                    resting.ValueRW = true;
+                }
+
+                runtime.ValueRW = particleRuntime;
+                spriteData.ValueRW = renderData;
+                localToWorld.ValueRW = currentLocalToWorld;
+            }
         }
     }
 }

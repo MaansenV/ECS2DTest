@@ -51,6 +51,15 @@ namespace ECS2D.Rendering
                     return;
                 }
 
+                var spriteDataAuthoring = GetComponent<SpriteDataAuthoring>();
+                if (spriteDataAuthoring == null)
+                {
+                    Debug.LogError(
+                        $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' requires {nameof(SpriteDataAuthoring)} on the same GameObject. " +
+                        $"{nameof(SpriteDataAuthoring)} owns sorting and base sprite rendering data.");
+                    return;
+                }
+
                 if (!TryCollectValidatedClips(authoring, out var validatedClips))
                 {
                     return;
@@ -64,9 +73,6 @@ namespace ECS2D.Rendering
                 AddBlobAsset(ref blobReference, out _);
 
                 int startClipIndex = ResolveStartClipIndex(authoring.StartAnimation, validatedClips);
-                ref SpriteAnimationSetBlob animationSet = ref blobReference.Value;
-                ref readonly var startClipBlob = ref blobReference.Value.Clips[startClipIndex];
-                int startFrameIndex = SpriteAnimationSetBlobUtility.ResolveSpriteFrameIndex(ref animationSet, in startClipBlob, 0);
 
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity, new SpriteAnimationSetReference
@@ -83,15 +89,6 @@ namespace ECS2D.Rendering
                     Flags = SpriteAnimationState.InitializedFlag,
                     Playing = authoring.PlayOnStart ? (byte)1 : (byte)0
                 });
-
-                var spriteDataAuthoring = GetComponent<SpriteDataAuthoring>();
-                if (spriteDataAuthoring == null)
-                {
-                    Debug.LogError(
-                        $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' requires {nameof(SpriteDataAuthoring)} on the same GameObject. " +
-                        $"{nameof(SpriteDataAuthoring)} owns sorting and base sprite rendering data.");
-                    return;
-                }
 
                 if (spriteDataAuthoring.SpriteSheet != null && spriteDataAuthoring.SpriteSheet != authoring.AnimationSet.SpriteSheet)
                 {

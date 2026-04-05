@@ -147,7 +147,114 @@ namespace ECS2D.Rendering.Tests
             Assert.IsTrue(entityManager.IsComponentEnabled<SpriteCullState>(particle));
         }
 
-        private static Entity CreateEmitterWithPool(World world, int maxParticles, int burstCount, float spawnRate, float restAfterSeconds)
+        [Test]
+        public void ParticleEmitterCleanupSystem_DoesNotDestroyDisabledEmitter()
+        {
+            using var world = new World("CleanupDisabledEmitterTests");
+            var entityManager = world.EntityManager;
+            var cleanupSystem = world.CreateSystem<ParticleEmitterCleanupSystem>();
+            world.CreateSystem<EndSimulationEntityCommandBufferSystem>();
+
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 4, burstCount: 0, spawnRate: 0f, restAfterSeconds: -1f, destroyEmitterAfterSeconds: -1f);
+            DynamicBuffer<ParticleEmitterParticleElement> pool = entityManager.GetBuffer<ParticleEmitterParticleElement>(emitter);
+            Entity[] poolEntities = new Entity[4];
+            for (int i = 0; i < 4; i++)
+            {
+                poolEntities[i] = pool[i].Value;
+            }
+
+            for (int i = 0; i < 20; i++)
+            {
+                world.SetTime(new TimeData(0.5 * (i + 1), 0.5f));
+                cleanupSystem.Update(world.Unmanaged);
+                entityManager.CompleteAllTrackedJobs();
+            }
+
+            Assert.IsTrue(entityManager.Exists(emitter));
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.IsTrue(entityManager.Exists(poolEntities[i]));
+            }
+        }
+
+        [Test]
+        public void ParticleEmitterCleanupSystem_DestroysEmitterAfterTimer()
+        {
+            using var world = new World("CleanupTimerExpiryTests");
+            var entityManager = world.EntityManager;
+            var cleanupSystem = world.CreateSystem<ParticleEmitterCleanupSystem>();
+            world.CreateSystem<EndSimulationEntityCommandBufferSystem>();
+
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 4, burstCount: 0, spawnRate: 0f, restAfterSeconds: -1f, destroyEmitterAfterSeconds: 1.0f);
+            DynamicBuffer<ParticleEmitterParticleElement> pool = entityManager.GetBuffer<ParticleEmitterParticleElement>(emitter);
+            Entity[] poolEntities = new Entity[4];
+            for (int i = 0; i < 4; i++)
+            {
+                poolEntities[i] = pool[i].Value;
+            }
+
+            world.SetTime(new TimeData(0.5, 0.5f));
+            cleanupSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Assert.IsTrue(entityManager.Exists(emitter));
+
+            world.SetTime(new TimeData(1.0, 0.5f));
+            cleanupSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Assert.IsFalse(entityManager.Exists(emitter));
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.IsFalse(entityManager.Exists(poolEntities[i]));
+            }
+        }
+
+        [Test]
+        public void ParticleEmitterCleanupSystem_DestroysPoolEntitiesWithEmitter()
+        {
+            using var world = new World("CleanupPoolEntitiesTests");
+            var entityManager = world.EntityManager;
+            var cleanupSystem = world.CreateSystem<ParticleEmitterCleanupSystem>();
+            world.CreateSystem<EndSimulationEntityCommandBufferSystem>();
+
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 4, burstCount: 0, spawnRate: 0f, restAfterSeconds: -1f, destroyEmitterAfterSeconds: 1.0f);
+            DynamicBuffer<ParticleEmitterParticleElement> pool = entityManager.GetBuffer<ParticleEmitterParticleElement>(emitter);
+            Entity[] poolEntities = new Entity[4];
+            for (int i = 0; i < 4; i++)
+            {
+                poolEntities[i] = pool[i].Value;
+            }
+
+            world.SetTime(new TimeData(1.0, 1.0f));
+            cleanupSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Assert.IsFalse(entityManager.Exists(emitter), "Emitter should be destroyed after timer expires");
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.IsFalse(entityManager.Exists(poolEntities[i]), $"Pool entity {i} should be destroyed with emitter");
+            }
+        }
+
+        [Test]
+        public void ParticleEmitterCleanupSystem_DoesNotDestroyBeforeTimer()
+        {
+            using var world = new World("CleanupBeforeTimerTests");
+            var entityManager = world.EntityManager;
+            var cleanupSystem = world.CreateSystem<ParticleEmitterCleanupSystem>();
+            world.CreateSystem<EndSimulationEntityCommandBufferSystem>();
+
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 4, burstCount: 0, spawnRate: 0f, restAfterSeconds: -1f, destroyEmitterAfterSeconds: 2.0f);
+
+            world.SetTime(new TimeData(1.5, 1.5f));
+            cleanupSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Assert.IsTrue(entityManager.Exists(emitter), "Emitter should still exist before timer expires");
+        }
+
+        private static Entity CreateEmitterWithPool(World world, int maxParticles, int burstCount, float spawnRate, float restAfterSeconds, float destroyEmitterAfterSeconds = -1f)
         {
             var entityManager = world.EntityManager;
             Entity emitter = entityManager.CreateEntity(typeof(LocalToWorld), typeof(ParticleEmitter), typeof(ParticleEmitterRuntimeState));
@@ -178,6 +285,7 @@ namespace ECS2D.Rendering.Tests
                 RotationSpeedMinRadians = 0f,
                 RotationSpeedMaxRadians = 0.5f,
                 RestAfterSeconds = restAfterSeconds,
+                DestroyEmitterAfterSeconds = destroyEmitterAfterSeconds,
                 CircleMode = (byte)ParticleCircleMode.Area,
                 DirectionMode = (byte)ParticleDirectionMode.Random,
                 EmitBurstOnStart = 1

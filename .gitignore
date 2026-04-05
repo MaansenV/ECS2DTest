@@ -63,3 +63,6 @@ crashlytics-build.properties
 
 
 B/
+/.sisyphus
+AGENTS.md
+Packages/com.ecs2d.renderer/AGENTS.md.meta

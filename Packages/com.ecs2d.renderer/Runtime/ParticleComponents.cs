@@ -46,6 +46,7 @@ namespace ECS2D.Rendering
         public float RotationSpeedMinRadians;
         public float RotationSpeedMaxRadians;
         public float RestAfterSeconds;
+        public float DestroyEmitterAfterSeconds;
         public byte CircleMode;
         public byte DirectionMode;
         public byte EmitBurstOnStart;
@@ -55,6 +56,7 @@ namespace ECS2D.Rendering
     {
         public float SpawnAccumulator;
         public float RestingExpiryAccumulator;
+        public float EmitterAge;
         public int NextPoolIndex;
         public uint RandomState;
         public byte BurstConsumed;

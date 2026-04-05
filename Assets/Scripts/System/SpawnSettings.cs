@@ -5,6 +5,7 @@ namespace Systems
     public struct SpawnPrefabReferences : IComponentData
     {
         public Entity PrefabEntity;
+        public Entity EmitterPrefabEntity;
     }
 
     public struct SpawnSettings : IComponentData

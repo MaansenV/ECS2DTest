@@ -31,6 +31,7 @@ namespace ECS2D.Rendering
         public float RotationSpeedMinDegrees;
         public float RotationSpeedMaxDegrees;
         public float RestAfterSeconds = -1f;
+        public float DestroyEmitterAfterSeconds = -1f;
 
         private sealed class Baker : Baker<ParticleEmitterAuthoring>
         {
@@ -58,6 +59,7 @@ namespace ECS2D.Rendering
                 float rotationSpeedMax = math.radians(math.max(authoring.RotationSpeedMinDegrees, authoring.RotationSpeedMaxDegrees));
                 int maxParticles = math.max(1, authoring.MaxParticles);
                 float restAfterSeconds = authoring.RestAfterSeconds < 0f ? -1f : math.max(0f, authoring.RestAfterSeconds);
+                float destroyEmitterAfterSeconds = authoring.DestroyEmitterAfterSeconds < 0f ? -1f : math.max(0f, authoring.DestroyEmitterAfterSeconds);
                 float spawnRate = authoring.Enabled ? math.max(0f, authoring.SpawnRate) : 0f;
                 int burstCount = authoring.Enabled ? math.max(0, authoring.BurstCount) : 0;
 
@@ -87,6 +89,7 @@ namespace ECS2D.Rendering
                     RotationSpeedMinRadians = rotationSpeedMin,
                     RotationSpeedMaxRadians = rotationSpeedMax,
                     RestAfterSeconds = restAfterSeconds,
+                    DestroyEmitterAfterSeconds = destroyEmitterAfterSeconds,
                     CircleMode = (byte)authoring.CircleMode,
                     DirectionMode = (byte)authoring.DirectionMode,
                     EmitBurstOnStart = (byte)(burstCount > 0 ? 1 : 0)
@@ -104,7 +107,7 @@ namespace ECS2D.Rendering
 
                 for (int i = 0; i < maxParticles; i++)
                 {
-                    Entity particleEntity = CreateAdditionalEntity(TransformUsageFlags.None, entityName: $"{authoring.name}-Particle-{i}");
+                    Entity particleEntity = CreateAdditionalEntity(TransformUsageFlags.ManualOverride, entityName: $"{authoring.name}-Particle-{i}");
                     buffer.Add(new ParticleEmitterParticleElement { Value = particleEntity });
 
                     AddComponent(particleEntity, new ParticleEmitterOwner
