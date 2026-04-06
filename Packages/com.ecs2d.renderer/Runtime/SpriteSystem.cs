@@ -19,6 +19,7 @@ namespace ECS2D.Rendering
         private Mesh quadMesh;
         private bool hasLoggedMissingDefinitions;
         private bool hasLoggedUnmatchedSprites;
+        private bool needsRenderGroupRebuild;
         private int lastDefinitionsSignature = int.MinValue;
 
         private static readonly int TranslationAndRotationBufferId = Shader.PropertyToID("translationAndRotationBuffer");
@@ -98,9 +99,10 @@ namespace ECS2D.Rendering
         protected override void OnUpdate()
         {
             int currentDefinitionsSignature = SpriteSheetDatabase.GetDefinitionsSignature();
-            if (currentDefinitionsSignature != lastDefinitionsSignature)
+            if (needsRenderGroupRebuild || currentDefinitionsSignature != lastDefinitionsSignature)
             {
                 BuildRenderGroups();
+                needsRenderGroupRebuild = false;
             }
 
             if (renderGroups.Count == 0)
@@ -160,7 +162,11 @@ namespace ECS2D.Rendering
 
                 uploadHandle.Complete();
                 group.EndWrite();
-                group.Draw(GetQuadMesh());
+                if (!group.Draw(GetQuadMesh()))
+                {
+                    needsRenderGroupRebuild = true;
+                    return;
+                }
             }
 
             filteredSpriteQuery.ResetFilter();
@@ -307,13 +313,14 @@ namespace ECS2D.Rendering
             public readonly int CapacityStep;
             public readonly Vector4[] Frames;
             public readonly Bounds Bounds;
-            public readonly Material Material;
+            public Material Material;
             public readonly int FrameCount;
             private readonly FrameBuffers[] frameBuffers = new FrameBuffers[UploadBufferCount];
             public ComputeBuffer UvBuffer;
             public int Capacity;
             public int WriteIndex;
             private int activeFrameBufferIndex;
+            private bool isDisposed;
 
             public SpriteRenderGroup(SpriteSheetDefinition definition)
             {
@@ -396,19 +403,31 @@ namespace ECS2D.Rendering
                 activeFrameBuffers.ArgsBuffer.SetData(activeFrameBuffers.Args);
             }
 
-            public void Draw(Mesh mesh)
+            public bool Draw(Mesh mesh)
             {
                 if (WriteIndex == 0)
                 {
-                    return;
+                    return true;
                 }
 
-                BindBuffers(frameBuffers[activeFrameBufferIndex]);
+                if (!BindBuffers(frameBuffers[activeFrameBufferIndex]))
+                {
+                    return false;
+                }
+
                 Graphics.DrawMeshInstancedIndirect(mesh, 0, Material, Bounds, frameBuffers[activeFrameBufferIndex].ArgsBuffer);
+                return true;
             }
 
             public void Dispose()
             {
+                if (isDisposed)
+                {
+                    return;
+                }
+
+                isDisposed = true;
+
                 for (int i = 0; i < frameBuffers.Length; i++)
                 {
                     ReleaseFrameBuffers(ref frameBuffers[i]);
@@ -419,7 +438,10 @@ namespace ECS2D.Rendering
                 if (Material != null)
                 {
                     SpriteSystem.DestroyUnityObject(Material);
+                    Material = null;
                 }
+
+                WriteIndex = 0;
             }
 
             private void CreateBuffers(int capacity)
@@ -451,8 +473,13 @@ namespace ECS2D.Rendering
                 }
             }
 
-            private void BindBuffers(in FrameBuffers buffers)
+            private bool BindBuffers(in FrameBuffers buffers)
             {
+                if (isDisposed || Material == null || UvBuffer == null || buffers.ArgsBuffer == null)
+                {
+                    return false;
+                }
+
                 Material.SetBuffer(UvBufferId, UvBuffer);
                 Material.SetBuffer(TranslationAndRotationBufferId, buffers.TranslationAndRotationBuffer);
                 Material.SetBuffer(ScaleBufferId, buffers.ScaleBuffer);
@@ -460,6 +487,7 @@ namespace ECS2D.Rendering
                 Material.SetBuffer(FrameIndexBufferId, buffers.FrameIndexBuffer);
                 Material.SetBuffer(FlipBufferId, buffers.FlipBuffer);
                 Material.SetBuffer(RenderDepthBufferId, buffers.RenderDepthBuffer);
+                return true;
             }
 
             private static FrameBuffers CreateFrameBuffers(int capacity)

@@ -5,6 +5,7 @@ namespace ECS2D.Rendering
 {
     public class EntitiesReferenceAuthoring : MonoBehaviour
     {
+        [Tooltip("Prefab converted into the BulletPrefab entity reference.")]
         public GameObject bulletPrefab;
 
         private class EntitiesReferenceAuthoringBaker : Baker<EntitiesReferenceAuthoring>

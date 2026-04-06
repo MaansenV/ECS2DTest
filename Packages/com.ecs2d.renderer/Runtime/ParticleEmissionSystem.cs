@@ -113,13 +113,13 @@ namespace ECS2D.Rendering
             runtime.Velocity = worldDirection * initialSpeed;
             runtime.Age = 0f;
             runtime.Lifetime = lifetime;
-            runtime.RestAfterSeconds = emitter.RestAfterSeconds;
+            runtime.SpeedCurve = emitter.SpeedCurve;
+            runtime.ScaleCurve = emitter.ScaleCurve;
             runtime.RotationRadians = rotationRadians;
             runtime.RotationSpeedRadians = rotationSpeedRadians;
             runtime.InitialSpeed = initialSpeed;
             runtime.CurrentSpeed = initialSpeed;
-            runtime.StartScale = emitter.StartScale;
-            runtime.EndScale = emitter.EndScale;
+            runtime.BaseScale = emitter.BaseScale;
             runtime.StartColor = emitter.StartColor;
             runtime.EndColor = emitter.EndColor;
             runtime.LifecycleState = (byte)ParticleLifecycleState.Active;
@@ -138,7 +138,6 @@ namespace ECS2D.Rendering
             entityManager.SetComponentData(particleEntity, spriteData);
             entityManager.SetComponentData(particleEntity, localToWorld);
             entityManager.SetComponentEnabled<ParticleActive>(particleEntity, true);
-            entityManager.SetComponentEnabled<ParticleResting>(particleEntity, false);
             entityManager.SetComponentEnabled<SpriteCullState>(particleEntity, true);
         }
     }

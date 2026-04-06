@@ -9,9 +9,17 @@ namespace ECS2D.Rendering
 {
     public class SpriteAnimationAuthoring : MonoBehaviour
     {
+        [Tooltip("The sprite animation set that provides the clips and sprite sheet for this authoring component.")]
         public SpriteAnimationSetDefinition AnimationSet;
+
+        [Tooltip("The clip name to start playing on spawn; falls back to the first valid clip when left empty or not found.")]
         public string StartAnimation = string.Empty;
+
+        [Tooltip("A multiplier applied to the authored clip playback rate for this entity.")]
+        [Range(0.01f, 10f)]
         public float PlaybackSpeed = 1f;
+
+        [Tooltip("Whether the animation should begin playing immediately when the entity is spawned.")]
         public bool PlayOnStart = true;
 
         private class SpriteAnimationAuthoringBaker : Baker<SpriteAnimationAuthoring>
@@ -51,6 +59,15 @@ namespace ECS2D.Rendering
                     return;
                 }
 
+                var spriteDataAuthoring = GetComponent<SpriteDataAuthoring>();
+                if (spriteDataAuthoring == null)
+                {
+                    Debug.LogError(
+                        $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' requires {nameof(SpriteDataAuthoring)} on the same GameObject. " +
+                        $"{nameof(SpriteDataAuthoring)} owns sorting and base sprite rendering data.");
+                    return;
+                }
+
                 if (!TryCollectValidatedClips(authoring, out var validatedClips))
                 {
                     return;
@@ -64,9 +81,6 @@ namespace ECS2D.Rendering
                 AddBlobAsset(ref blobReference, out _);
 
                 int startClipIndex = ResolveStartClipIndex(authoring.StartAnimation, validatedClips);
-                ref SpriteAnimationSetBlob animationSet = ref blobReference.Value;
-                ref readonly var startClipBlob = ref blobReference.Value.Clips[startClipIndex];
-                int startFrameIndex = SpriteAnimationSetBlobUtility.ResolveSpriteFrameIndex(ref animationSet, in startClipBlob, 0);
 
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity, new SpriteAnimationSetReference
@@ -83,15 +97,6 @@ namespace ECS2D.Rendering
                     Flags = SpriteAnimationState.InitializedFlag,
                     Playing = authoring.PlayOnStart ? (byte)1 : (byte)0
                 });
-
-                var spriteDataAuthoring = GetComponent<SpriteDataAuthoring>();
-                if (spriteDataAuthoring == null)
-                {
-                    Debug.LogError(
-                        $"{nameof(SpriteAnimationAuthoring)} on '{authoring.name}' requires {nameof(SpriteDataAuthoring)} on the same GameObject. " +
-                        $"{nameof(SpriteDataAuthoring)} owns sorting and base sprite rendering data.");
-                    return;
-                }
 
                 if (spriteDataAuthoring.SpriteSheet != null && spriteDataAuthoring.SpriteSheet != authoring.AnimationSet.SpriteSheet)
                 {

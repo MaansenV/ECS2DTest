@@ -1,5 +1,12 @@
+using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using Random = Unity.Mathematics.Random;
+
+#if UNITY_EDITOR
+using AnimationCurve = UnityEngine.AnimationCurve;
+#endif
 
 namespace ECS2D.Rendering
 {
@@ -73,16 +80,6 @@ namespace ECS2D.Rendering
             return localToWorld.Position + new float3(transformed, 0f);
         }
 
-        public static float EvaluateSpeedMultiplier(float age, float restAfterSeconds)
-        {
-            if (restAfterSeconds <= 0f)
-            {
-                return 1f;
-            }
-
-            return math.saturate(1f - (age / restAfterSeconds));
-        }
-
         public static float EvaluateLifetimeFraction(float age, float lifetime)
         {
             if (lifetime <= 0.0001f)
@@ -93,8 +90,71 @@ namespace ECS2D.Rendering
             return math.saturate(age / lifetime);
         }
 
-        public static float EvaluateScale(float startScale, float endScale, float age, float lifetime)
-            => math.lerp(startScale, endScale, EvaluateLifetimeFraction(age, lifetime));
+        public static float EvaluateCurveLUT(BlobAssetReference<CurveBlobLUT> curve, float normalizedAge)
+        {
+            if (!curve.IsCreated)
+            {
+                return 1f;
+            }
+
+            int sampleCount = curve.Value.Samples.Length;
+            if (sampleCount <= 0)
+            {
+                return 1f;
+            }
+
+            float t = math.saturate(normalizedAge);
+            float exactIndex = t * (sampleCount - 1);
+            int lower = (int)math.floor(exactIndex);
+            int upper = math.min(lower + 1, sampleCount - 1);
+            float frac = exactIndex - lower;
+            return math.lerp(curve.Value.Samples[lower], curve.Value.Samples[upper], frac);
+        }
+
+#if UNITY_EDITOR
+        public static BlobAssetReference<CurveBlobLUT> SampleAnimationCurveToBlob(AnimationCurve curve, int sampleCount)
+        {
+            sampleCount = math.max(1, sampleCount);
+
+            using var builder = new BlobBuilder(Allocator.Temp);
+            ref CurveBlobLUT root = ref builder.ConstructRoot<CurveBlobLUT>();
+            BlobBuilderArray<float> samples = builder.Allocate(ref root.Samples, sampleCount);
+
+            if (curve == null)
+            {
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    samples[i] = 1f;
+                }
+            }
+            else
+            {
+                float denominator = math.max(1, sampleCount - 1);
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    samples[i] = curve.Evaluate(i / denominator);
+                }
+            }
+
+            return builder.CreateBlobAssetReference<CurveBlobLUT>(Allocator.Persistent);
+        }
+#endif
+
+        public static BlobAssetReference<CurveBlobLUT> CreateFlatCurveBlob(int sampleCount, float value)
+        {
+            sampleCount = math.max(1, sampleCount);
+
+            using var builder = new BlobBuilder(Allocator.Temp);
+            ref CurveBlobLUT root = ref builder.ConstructRoot<CurveBlobLUT>();
+            BlobBuilderArray<float> samples = builder.Allocate(ref root.Samples, sampleCount);
+
+            for (int i = 0; i < sampleCount; i++)
+            {
+                samples[i] = value;
+            }
+
+            return builder.CreateBlobAssetReference<CurveBlobLUT>(Allocator.Persistent);
+        }
 
         public static float4 EvaluateColor(float4 startColor, float4 endColor, float age, float lifetime)
             => math.lerp(startColor, endColor, EvaluateLifetimeFraction(age, lifetime));
@@ -105,7 +165,7 @@ namespace ECS2D.Rendering
             ref LocalToWorld localToWorld)
         {
             spriteData.TranslationAndRotation = new float4(runtime.Position, runtime.RotationRadians);
-            spriteData.Scale = EvaluateScale(runtime.StartScale, runtime.EndScale, runtime.Age, runtime.Lifetime);
+            spriteData.Scale = runtime.BaseScale * EvaluateCurveLUT(runtime.ScaleCurve, EvaluateLifetimeFraction(runtime.Age, runtime.Lifetime));
             spriteData.Color = EvaluateColor(runtime.StartColor, runtime.EndColor, runtime.Age, runtime.Lifetime);
             spriteData.RenderDepth = SpriteSortingUtility.CalculateRenderDepth(
                 spriteData.SortingLayer,

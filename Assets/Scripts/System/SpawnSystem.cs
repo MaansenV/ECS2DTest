@@ -10,13 +10,17 @@ namespace Systems
     public partial struct SpawnSystem : ISystem
     {
         private bool _gridSpawned;
+        private bool _emitterGridSpawned;
         private int _nextGridIndex;
+        private int _nextEmitterGridIndex;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _gridSpawned = false;
+            _emitterGridSpawned = false;
             _nextGridIndex = 0;
+            _nextEmitterGridIndex = 0;
             state.RequireForUpdate<SpawnSettings>();
         }
 
@@ -35,12 +39,8 @@ namespace Systems
             }
 
             var prefabs = state.EntityManager.GetComponentData<SpawnPrefabReferences>(settingsEntity);
-            if (prefabs.PrefabEntity == Entity.Null)
-            {
-                return;
-            }
 
-            if (!_gridSpawned)
+            if (!_gridSpawned && prefabs.PrefabEntity != Entity.Null)
             {
                 int totalSprites = spawnSettings.GridRows * spawnSettings.GridColumns;
                 int spawned = SpawnGridBatch(ref state, ref spawnSettings, prefabs.PrefabEntity, _nextGridIndex, totalSprites);
@@ -50,6 +50,19 @@ namespace Systems
                 if (_nextGridIndex >= totalSprites)
                 {
                     _gridSpawned = true;
+                }
+            }
+
+            if (!_emitterGridSpawned && prefabs.EmitterPrefabEntity != Entity.Null)
+            {
+                int totalEmitters = spawnSettings.GridRows * spawnSettings.GridColumns;
+                int spawned = SpawnEmitterGridBatch(ref state, ref spawnSettings, prefabs.EmitterPrefabEntity, _nextEmitterGridIndex, totalEmitters);
+
+                _nextEmitterGridIndex += spawned;
+
+                if (_nextEmitterGridIndex >= totalEmitters)
+                {
+                    _emitterGridSpawned = true;
                 }
             }
         }
@@ -105,6 +118,51 @@ namespace Systems
                 data.Scale = spawnSettings.SpriteSize;
                 data.Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
                 state.EntityManager.SetComponentData(entity, data);
+            }
+
+            return spawnCount;
+        }
+
+        private int SpawnEmitterGridBatch(ref SystemState state, ref SpawnSettings spawnSettings, Entity prefabEntity, int startIndex, int totalEmitters)
+        {
+            int spawnCount = math.min(spawnSettings.SpawnPerFrame, totalEmitters - startIndex);
+            if (spawnCount <= 0)
+            {
+                return 0;
+            }
+
+            float stepX = spawnSettings.SpriteSize + spawnSettings.SpacingX;
+            float stepY = spawnSettings.SpriteSize + spawnSettings.SpacingY;
+
+            for (int index = startIndex; index < startIndex + spawnCount; index++)
+            {
+                int row = index / spawnSettings.GridColumns;
+                int col = index % spawnSettings.GridColumns;
+                float3 position = new float3(col * stepX, row * stepY, 0f);
+
+                var entity = state.EntityManager.Instantiate(prefabEntity);
+
+                if (state.EntityManager.HasComponent<LocalTransform>(entity))
+                {
+                    var localTransform = state.EntityManager.GetComponentData<LocalTransform>(entity);
+                    localTransform.Position = position;
+                    state.EntityManager.SetComponentData(entity, localTransform);
+                }
+
+                if (state.EntityManager.HasComponent<LocalToWorld>(entity))
+                {
+                    quaternion rotation = quaternion.identity;
+                    if (state.EntityManager.HasComponent<LocalTransform>(entity))
+                    {
+                        rotation = state.EntityManager.GetComponentData<LocalTransform>(entity).Rotation;
+                    }
+
+                    float4x4 worldMatrix = float4x4.TRS(position, rotation, new float3(1f));
+                    state.EntityManager.SetComponentData(entity, new LocalToWorld
+                    {
+                        Value = worldMatrix
+                    });
+                }
             }
 
             return spawnCount;

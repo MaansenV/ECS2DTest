@@ -1,0 +1,19 @@
+{
+  "name": "ECS2D.Rendering.Editor",
+  "rootNamespace": "ECS2D.Rendering.Editor",
+  "references": [
+    "ECS2D.Rendering",
+    "Unity.Mathematics"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

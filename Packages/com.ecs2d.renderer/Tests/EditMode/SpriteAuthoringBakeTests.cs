@@ -3,6 +3,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace ECS2D.Rendering.Tests
 {
@@ -149,11 +150,12 @@ namespace ECS2D.Rendering.Tests
                 var authoring = root.AddComponent<SpriteAnimationAuthoring>();
                 authoring.AnimationSet = animationSet;
 
+                LogAssert.Expect(
+                    LogType.Error,
+                    $"{nameof(SpriteAnimationAuthoring)} on '{root.name}' requires {nameof(SpriteDataAuthoring)} on the same GameObject. {nameof(SpriteDataAuthoring)} owns sorting and base sprite rendering data.");
+
                 object bakingSettings = CreateBakingSettings(blobAssetStore);
                 InvokeBakeGameObjects(world, bakingSettings, root);
-
-                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
-                Assert.Throws<Exception>(() => GetBakedEntity(bakingSystem, root));
             }
             finally
             {
@@ -316,7 +318,7 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
-        public void SpriteAnimationAuthoring_BakesFlipFromNegativeScale_WithoutSpriteDataAuthoring()
+        public void SpriteAnimationAuthoring_BakesFlipFromNegativeScale_WithSpriteDataAuthoring()
         {
             using var world = new World("SpriteAuthoringBakeTests");
             using var blobAssetStore = new BlobAssetStore(128);
@@ -346,6 +348,8 @@ namespace ECS2D.Rendering.Tests
                 var authoring = root.AddComponent<SpriteAnimationAuthoring>();
                 authoring.AnimationSet = animationSet;
                 authoring.PlayOnStart = true;
+                var spriteDataAuthoring = root.AddComponent<SpriteDataAuthoring>();
+                spriteDataAuthoring.SpriteSheet = sheet;
                 root.transform.localScale = new Vector3(-1.5f, 1.5f, 1f);
 
                 object bakingSettings = CreateBakingSettings(blobAssetStore);
@@ -368,7 +372,7 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
-        public void SpriteAnimationAuthoring_BakesFlipXAndFlipYFromNegativeScale_WithoutSpriteDataAuthoring()
+        public void SpriteAnimationAuthoring_BakesFlipXAndFlipYFromNegativeScale_WithSpriteDataAuthoring()
         {
             using var world = new World("SpriteAuthoringBakeTests");
             using var blobAssetStore = new BlobAssetStore(128);
@@ -398,6 +402,8 @@ namespace ECS2D.Rendering.Tests
                 var authoring = root.AddComponent<SpriteAnimationAuthoring>();
                 authoring.AnimationSet = animationSet;
                 authoring.PlayOnStart = true;
+                var spriteDataAuthoring = root.AddComponent<SpriteDataAuthoring>();
+                spriteDataAuthoring.SpriteSheet = sheet;
                 root.transform.localScale = new Vector3(-1.5f, -1.5f, 1f);
 
                 object bakingSettings = CreateBakingSettings(blobAssetStore);

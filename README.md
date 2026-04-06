@@ -60,6 +60,16 @@ For a detailed guide with short code snippets on how everything is used, check o
 
 Release automation for agents and maintainers lives in **[docs/release-workflow.md](docs/release-workflow.md)**.
 
+## Release
+
+To release a new version of `com.ecs2d.renderer`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\release-package.ps1 -Version <VERSION> -Push
+```
+
+This validates the version, bumps the package version, creates a commit with an annotated tag, and pushes to GitHub.
+
 ## Quick usage
 
 1. Install the package.
