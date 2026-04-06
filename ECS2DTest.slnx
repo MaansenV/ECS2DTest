@@ -68,6 +68,7 @@
   <Project Path="Unity.RenderPipelines.Universal.2D.Editor.Overrides.csproj" />
   <Project Path="Unity.Entities.Editor.Properties.csproj" />
   <Project Path="Unity.2D.Sprite.Editor.csproj" />
+  <Project Path="ECS2D.Rendering.Editor.csproj" />
   <Project Path="Unity.2D.PixelPerfect.Editor.csproj" />
   <Project Path="Unity.Multiplayer.Center.Common.csproj" />
   <Project Path="Unity.Collections.CodeGen.csproj" />

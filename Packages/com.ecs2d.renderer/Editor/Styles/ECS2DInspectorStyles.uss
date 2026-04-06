@@ -1,0 +1,165 @@
+/* 
+ * Shared Inspector Stylesheet for ECS2D Renderer
+ * Provides a colorful and modern UI Toolkit aesthetic for custom editors.
+ */
+
+:root {
+    /* Color Palette - Uses rgba with transparency for better dark/light mode compatibility */
+    --ecs2d-color-blue: rgba(58, 121, 200, 0.15);
+    --ecs2d-color-blue-border: rgba(58, 121, 200, 0.4);
+    
+    --ecs2d-color-green: rgba(76, 175, 80, 0.15);
+    --ecs2d-color-green-border: rgba(76, 175, 80, 0.4);
+    
+    --ecs2d-color-orange: rgba(255, 152, 0, 0.15);
+    --ecs2d-color-orange-border: rgba(255, 152, 0, 0.4);
+    
+    --ecs2d-color-purple: rgba(156, 39, 176, 0.15);
+    --ecs2d-color-purple-border: rgba(156, 39, 176, 0.4);
+    
+    --ecs2d-color-red: rgba(244, 67, 54, 0.15);
+    --ecs2d-color-red-border: rgba(244, 67, 54, 0.4);
+    
+    --ecs2d-color-teal: rgba(0, 150, 136, 0.15);
+    --ecs2d-color-teal-border: rgba(0, 150, 136, 0.4);
+    
+    --ecs2d-color-yellow: rgba(255, 235, 59, 0.15);
+    --ecs2d-color-yellow-border: rgba(255, 235, 59, 0.4);
+    
+    /* Spacing & Borders */
+    --ecs2d-spacing-small: 4px;
+    --ecs2d-spacing-medium: 8px;
+    --ecs2d-spacing-large: 16px;
+    --ecs2d-border-radius: 6px;
+}
+
+/* Base Layout Container */
+.ecs2d-inspector-root {
+    padding: var(--ecs2d-spacing-small);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Base Section / Foldout Box */
+.ecs2d-section {
+    margin-bottom: var(--ecs2d-spacing-medium);
+    padding: var(--ecs2d-spacing-small);
+    border-radius: var(--ecs2d-border-radius);
+    border-width: 1px;
+    border-color: rgba(128, 128, 128, 0.2);
+    background-color: rgba(128, 128, 128, 0.05);
+}
+
+.ecs2d-foldout > .unity-foldout__toggle {
+    margin-bottom: var(--ecs2d-spacing-small);
+    -unity-font-style: bold;
+    border-left-width: 4px;
+    padding-left: var(--ecs2d-spacing-medium);
+}
+
+.ecs2d-foldout {
+    overflow: hidden;
+}
+
+/* Foldout Header Title Styling */
+.ecs2d-section-header {
+    -unity-font-style: bold;
+    font-size: 13px;
+}
+
+/* --- Semantic Section Variants --- */
+.ecs2d-section-sprite {
+    background-color: var(--ecs2d-color-blue);
+    border-color: var(--ecs2d-color-blue-border);
+}
+
+.ecs2d-section-sprite > .unity-foldout__toggle {
+    border-left-color: var(--ecs2d-color-blue-border);
+}
+
+.ecs2d-section-animation {
+    background-color: var(--ecs2d-color-green);
+    border-color: var(--ecs2d-color-green-border);
+}
+
+.ecs2d-section-animation > .unity-foldout__toggle {
+    border-left-color: var(--ecs2d-color-green-border);
+}
+
+.ecs2d-section-spawn {
+    background-color: var(--ecs2d-color-orange);
+    border-color: var(--ecs2d-color-orange-border);
+}
+
+.ecs2d-section-spawn > .unity-foldout__toggle {
+    border-left-color: var(--ecs2d-color-orange-border);
+}
+
+.ecs2d-section-physics {
+    background-color: var(--ecs2d-color-red);
+    border-color: var(--ecs2d-color-red-border);
+}
+
+.ecs2d-section-physics > .unity-foldout__toggle {
+    border-left-color: var(--ecs2d-color-red-border);
+}
+
+.ecs2d-section-color {
+    background-color: var(--ecs2d-color-purple);
+    border-color: var(--ecs2d-color-purple-border);
+}
+
+.ecs2d-section-color > .unity-foldout__toggle {
+    border-left-color: var(--ecs2d-color-purple-border);
+}
+
+.ecs2d-section-shape {
+    background-color: var(--ecs2d-color-teal);
+    border-color: var(--ecs2d-color-teal-border);
+}
+
+.ecs2d-section-shape > .unity-foldout__toggle {
+    border-left-color: var(--ecs2d-color-teal-border);
+}
+
+.ecs2d-section-rotation {
+    background-color: var(--ecs2d-color-yellow);
+    border-color: var(--ecs2d-color-yellow-border);
+}
+
+.ecs2d-section-rotation > .unity-foldout__toggle {
+    border-left-color: var(--ecs2d-color-yellow-border);
+}
+
+/* Prominent Toggle (e.g. Master Enable/Disable switches) */
+.ecs2d-prominent-toggle {
+    padding: var(--ecs2d-spacing-medium);
+    background-color: rgba(128, 128, 128, 0.1);
+    border-radius: var(--ecs2d-border-radius);
+    border-width: 1px;
+    border-color: rgba(128, 128, 128, 0.3);
+    margin-bottom: var(--ecs2d-spacing-large);
+}
+
+.ecs2d-prominent-toggle > .unity-toggle__label {
+    -unity-font-style: bold;
+    font-size: 14px;
+    flex-grow: 1;
+}
+
+/* Help Box (Informational Text) */
+.ecs2d-help-box {
+    white-space: normal;
+    margin-top: var(--ecs2d-spacing-medium);
+    margin-bottom: var(--ecs2d-spacing-small);
+    padding: var(--ecs2d-spacing-medium);
+    background-color: rgba(128, 128, 128, 0.05);
+    border-left-width: 4px;
+    border-left-color: var(--ecs2d-color-blue-border);
+    border-radius: 4px;
+}
+
+/* Field Spacing Utility */
+.ecs2d-field-spacing {
+    margin-bottom: var(--ecs2d-spacing-small);
+}

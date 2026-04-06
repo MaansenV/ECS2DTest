@@ -6,13 +6,31 @@ namespace ECS2D.Rendering
 {
     public class SpriteDataAuthoring : MonoBehaviour
     {
+        [Tooltip("Sprite sheet asset that defines the texture, frame layout, and render key for this sprite.")]
         public SpriteSheetDefinition SpriteSheet;
+
+        [Tooltip("Rendering layer used to order this sprite against other sprites.")]
         public int SortingLayer;
+
+        [Tooltip("Initial sprite frame index used before animation overrides it.")]
+        [Range(0, 100)]
         public int SpriteFrameIndex;
+
+        [Tooltip("Per-sprite size multiplier applied on top of the GameObject scale.")]
+        [Range(0.01f, 100f)]
         public float BaseScale = 1f;
+
+        [Tooltip("Vertex color tint applied when rendering this sprite.")]
         public float4 Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
+
+        [Tooltip("Additional local rotation offset applied in degrees before rendering.")]
+        [Range(-360f, 360f)]
         public float RotationOffsetDegrees;
+
+        [Tooltip("Mirror the sprite horizontally before transform-based flip handling.")]
         public bool FlipX;
+
+        [Tooltip("Mirror the sprite vertically before transform-based flip handling.")]
         public bool FlipY;
 
         private class SpriteDataAuthoringBaker : Baker<SpriteDataAuthoring>

@@ -5,6 +5,7 @@ namespace ECS2D.Rendering
 {
     public class SpriteCullingSettingsAuthoring : MonoBehaviour
     {
+        [Tooltip("Enable or disable sprite frustum culling for this scene.")]
         public bool CullingEnabled = true;
 
         private sealed class Baker : Baker<SpriteCullingSettingsAuthoring>

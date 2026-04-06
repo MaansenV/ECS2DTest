@@ -9,9 +9,17 @@ namespace ECS2D.Rendering
 {
     public class SpriteAnimationAuthoring : MonoBehaviour
     {
+        [Tooltip("The sprite animation set that provides the clips and sprite sheet for this authoring component.")]
         public SpriteAnimationSetDefinition AnimationSet;
+
+        [Tooltip("The clip name to start playing on spawn; falls back to the first valid clip when left empty or not found.")]
         public string StartAnimation = string.Empty;
+
+        [Tooltip("A multiplier applied to the authored clip playback rate for this entity.")]
+        [Range(0.01f, 10f)]
         public float PlaybackSpeed = 1f;
+
+        [Tooltip("Whether the animation should begin playing immediately when the entity is spawned.")]
         public bool PlayOnStart = true;
 
         private class SpriteAnimationAuthoringBaker : Baker<SpriteAnimationAuthoring>
