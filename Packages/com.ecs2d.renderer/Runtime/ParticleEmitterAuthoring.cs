@@ -142,7 +142,7 @@ namespace ECS2D.Rendering
                 AddComponent(entity, new ParticleEmitterRuntimeState
                 {
                     SpawnAccumulator = 0f,
-                    RandomState = 0u,
+                    RandomState = (uint)entity.Index + 1u,
                     NextPoolIndex = 0,
                     BurstConsumed = 0
                 });

@@ -112,6 +112,52 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
+        public void ParticleEmitterAuthoring_AssignsDistinctNonZeroRandomSeedsPerEmitter()
+        {
+            using var world = new World("ParticleEmitterAuthoringRandomSeedBakeTests");
+            using var blobAssetStore = new BlobAssetStore(128);
+
+            var sheet = ScriptableObject.CreateInstance<SpriteSheetDefinition>();
+            var rootA = new GameObject("ParticleEmitterAuthoringRandomSeedBakeTests-A");
+            var rootB = new GameObject("ParticleEmitterAuthoringRandomSeedBakeTests-B");
+
+            try
+            {
+                SetField(sheet, "sheetId", 55);
+                SetField(sheet, "autoGenerateGridFrames", false);
+                SetField(sheet, "frames", new[] { new Vector4(1f, 1f, 0f, 0f) });
+
+                var authoringA = rootA.AddComponent<ParticleEmitterAuthoring>();
+                authoringA.SpriteSheet = sheet;
+                authoringA.MaxParticles = 1;
+
+                var authoringB = rootB.AddComponent<ParticleEmitterAuthoring>();
+                authoringB.SpriteSheet = sheet;
+                authoringB.MaxParticles = 1;
+
+                object bakingSettings = CreateBakingSettings(blobAssetStore);
+                InvokeBakeGameObjects(world, bakingSettings, rootA, rootB);
+
+                var bakingSystem = world.GetOrCreateSystemManaged<BakingSystem>();
+                Entity emitterEntityA = GetBakedEntity(bakingSystem, rootA);
+                Entity emitterEntityB = GetBakedEntity(bakingSystem, rootB);
+
+                var runtimeStateA = world.EntityManager.GetComponentData<ParticleEmitterRuntimeState>(emitterEntityA);
+                var runtimeStateB = world.EntityManager.GetComponentData<ParticleEmitterRuntimeState>(emitterEntityB);
+
+                Assert.AreNotEqual(0u, runtimeStateA.RandomState);
+                Assert.AreNotEqual(0u, runtimeStateB.RandomState);
+                Assert.AreNotEqual(runtimeStateA.RandomState, runtimeStateB.RandomState);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(rootA);
+                UnityEngine.Object.DestroyImmediate(rootB);
+                UnityEngine.Object.DestroyImmediate(sheet);
+            }
+        }
+
+        [Test]
         public void ParticleEmitterAuthoring_BakedEmitterSpawnsAndCleansUp()
         {
             using var world = new World("ParticleEmitterAuthoringCleanupTests");
@@ -194,13 +240,13 @@ namespace ECS2D.Rendering.Tests
             return ctor.Invoke(new object[] { flags, blobAssetStore });
         }
 
-        private static void InvokeBakeGameObjects(World world, object bakingSettings, GameObject root)
+        private static void InvokeBakeGameObjects(World world, object bakingSettings, params GameObject[] roots)
         {
             Assembly hybridAssembly = typeof(BakingSystem).Assembly;
             Type bakingUtilityType = hybridAssembly.GetType("Unity.Entities.BakingUtility", throwOnError: true);
             MethodInfo bakeGameObjects = bakingUtilityType.GetMethod("BakeGameObjects", BindingFlags.Static | BindingFlags.NonPublic);
 
-            bakeGameObjects?.Invoke(null, new object[] { world, new[] { root }, bakingSettings });
+            bakeGameObjects?.Invoke(null, new object[] { world, roots, bakingSettings });
         }
 
         private static Entity GetBakedEntity(BakingSystem bakingSystem, GameObject root)
