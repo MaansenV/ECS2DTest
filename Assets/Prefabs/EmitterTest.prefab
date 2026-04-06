@@ -55,8 +55,57 @@ MonoBehaviour:
   LifetimeMax: 6
   SpeedMin: 1
   SpeedMax: 0.5
-  StartScale: 1
-  EndScale: 0
+  SpeedCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  ScaleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  SpeedCurveMode: 0
+  ScaleCurveMode: 0
+  BaseScale: 1
   StartColor: {r: 1, g: 1, b: 1, a: 1}
   EndColor: {r: 0, g: 0, b: 0, a: 0}
   CircleRadius: 0.5
@@ -67,5 +116,4 @@ MonoBehaviour:
   StartRotationMaxDegrees: 180
   RotationSpeedMinDegrees: 0
   RotationSpeedMaxDegrees: 0
-  RestAfterSeconds: 3
   DestroyEmitterAfterSeconds: 6

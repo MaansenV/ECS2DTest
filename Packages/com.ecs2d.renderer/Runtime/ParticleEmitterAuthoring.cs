@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -18,8 +19,11 @@ namespace ECS2D.Rendering
         public float LifetimeMax = 1f;
         public float SpeedMin = 1f;
         public float SpeedMax = 1f;
-        public float StartScale = 1f;
-        public float EndScale = 0f;
+        public AnimationCurve SpeedCurve = AnimationCurve.Constant(0f, 1f, 1f);
+        public AnimationCurve ScaleCurve = AnimationCurve.Constant(0f, 1f, 1f);
+        public ParticleCurveMode SpeedCurveMode = ParticleCurveMode.Constant;
+        public ParticleCurveMode ScaleCurveMode = ParticleCurveMode.Constant;
+        public float BaseScale = 1f;
         public Color StartColor = Color.white;
         public Color EndColor = Color.clear;
         public float CircleRadius = 0.5f;
@@ -30,7 +34,6 @@ namespace ECS2D.Rendering
         public float StartRotationMaxDegrees;
         public float RotationSpeedMinDegrees;
         public float RotationSpeedMaxDegrees;
-        public float RestAfterSeconds = -1f;
         public float DestroyEmitterAfterSeconds = -1f;
 
         private sealed class Baker : Baker<ParticleEmitterAuthoring>
@@ -58,10 +61,11 @@ namespace ECS2D.Rendering
                 float rotationSpeedMin = math.radians(math.min(authoring.RotationSpeedMinDegrees, authoring.RotationSpeedMaxDegrees));
                 float rotationSpeedMax = math.radians(math.max(authoring.RotationSpeedMinDegrees, authoring.RotationSpeedMaxDegrees));
                 int maxParticles = math.max(1, authoring.MaxParticles);
-                float restAfterSeconds = authoring.RestAfterSeconds < 0f ? -1f : math.max(0f, authoring.RestAfterSeconds);
                 float destroyEmitterAfterSeconds = authoring.DestroyEmitterAfterSeconds < 0f ? -1f : math.max(0f, authoring.DestroyEmitterAfterSeconds);
                 float spawnRate = authoring.Enabled ? math.max(0f, authoring.SpawnRate) : 0f;
                 int burstCount = authoring.Enabled ? math.max(0, authoring.BurstCount) : 0;
+                BlobAssetReference<CurveBlobLUT> speedCurve = ParticleSpawnUtility.SampleAnimationCurveToBlob(authoring.SpeedCurve, CurveBlobLUT.kSampleCount);
+                BlobAssetReference<CurveBlobLUT> scaleCurve = ParticleSpawnUtility.SampleAnimationCurveToBlob(authoring.ScaleCurve, CurveBlobLUT.kSampleCount);
 
                 float4 startColor = new float4(authoring.StartColor.r, authoring.StartColor.g, authoring.StartColor.b, authoring.StartColor.a);
                 float4 endColor = new float4(authoring.EndColor.r, authoring.EndColor.g, authoring.EndColor.b, authoring.EndColor.a);
@@ -78,8 +82,11 @@ namespace ECS2D.Rendering
                     LifetimeMax = lifetimeMax,
                     SpeedMin = speedMin,
                     SpeedMax = speedMax,
-                    StartScale = math.max(0f, authoring.StartScale),
-                    EndScale = math.max(0f, authoring.EndScale),
+                    SpeedCurve = speedCurve,
+                    ScaleCurve = scaleCurve,
+                    SpeedCurveMode = (byte)authoring.SpeedCurveMode,
+                    ScaleCurveMode = (byte)authoring.ScaleCurveMode,
+                    BaseScale = math.max(0f, authoring.BaseScale),
                     StartColor = startColor,
                     EndColor = endColor,
                     CircleRadius = math.max(0f, authoring.CircleRadius),
@@ -88,7 +95,6 @@ namespace ECS2D.Rendering
                     StartRotationMaxRadians = rotationMax,
                     RotationSpeedMinRadians = rotationSpeedMin,
                     RotationSpeedMaxRadians = rotationSpeedMax,
-                    RestAfterSeconds = restAfterSeconds,
                     DestroyEmitterAfterSeconds = destroyEmitterAfterSeconds,
                     CircleMode = (byte)authoring.CircleMode,
                     DirectionMode = (byte)authoring.DirectionMode,
@@ -97,7 +103,6 @@ namespace ECS2D.Rendering
                 AddComponent(entity, new ParticleEmitterRuntimeState
                 {
                     SpawnAccumulator = 0f,
-                    RestingExpiryAccumulator = 0f,
                     RandomState = 0u,
                     NextPoolIndex = 0,
                     BurstConsumed = 0
@@ -116,17 +121,15 @@ namespace ECS2D.Rendering
                     });
                     AddComponent(particleEntity, new ParticleRuntime
                     {
-                        StartScale = math.max(0f, authoring.StartScale),
-                        EndScale = math.max(0f, authoring.EndScale),
+                        SpeedCurve = speedCurve,
+                        ScaleCurve = scaleCurve,
+                        BaseScale = math.max(0f, authoring.BaseScale),
                         StartColor = startColor,
                         EndColor = endColor,
-                        RestAfterSeconds = restAfterSeconds,
                         LifecycleState = (byte)ParticleLifecycleState.Inactive
                     });
                     AddComponent<ParticleActive>(particleEntity);
                     SetComponentEnabled<ParticleActive>(particleEntity, false);
-                    AddComponent<ParticleResting>(particleEntity);
-                    SetComponentEnabled<ParticleResting>(particleEntity, false);
                     AddComponent<SpriteCullState>(particleEntity);
                     SetComponentEnabled<SpriteCullState>(particleEntity, false);
                     AddComponent(particleEntity, new LocalToWorld

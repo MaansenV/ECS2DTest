@@ -20,12 +20,11 @@ namespace ECS2D.Rendering
         {
             float deltaTime = SystemAPI.Time.DeltaTime;
 
-            foreach (var (runtime, spriteData, localToWorld, active, resting, cullState) in SystemAPI.Query<
+            foreach (var (runtime, spriteData, localToWorld, active, cullState) in SystemAPI.Query<
                 RefRW<ParticleRuntime>,
                 RefRW<SpriteData>,
                 RefRW<LocalToWorld>,
                 EnabledRefRW<ParticleActive>,
-                EnabledRefRW<ParticleResting>,
                 EnabledRefRW<SpriteCullState>>()
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
             {
@@ -49,12 +48,12 @@ namespace ECS2D.Rendering
                     runtime.ValueRW = particleRuntime;
                     spriteData.ValueRW = renderData;
                     active.ValueRW = false;
-                    resting.ValueRW = false;
                     cullState.ValueRW = false;
                     continue;
                 }
 
-                float speedMultiplier = ParticleSpawnUtility.EvaluateSpeedMultiplier(particleRuntime.Age, particleRuntime.RestAfterSeconds);
+                float normalizedAge = ParticleSpawnUtility.EvaluateLifetimeFraction(particleRuntime.Age, particleRuntime.Lifetime);
+                float speedMultiplier = ParticleSpawnUtility.EvaluateCurveLUT(particleRuntime.SpeedCurve, normalizedAge);
                 float nextSpeed = particleRuntime.InitialSpeed * speedMultiplier;
                 float2 movement = particleRuntime.Velocity * speedMultiplier * deltaTime;
                 particleRuntime.Position += new float3(movement, 0f);
@@ -62,15 +61,6 @@ namespace ECS2D.Rendering
                 particleRuntime.CurrentSpeed = nextSpeed;
 
                 ParticleSpawnUtility.WriteRenderState(ref particleRuntime, ref renderData, ref currentLocalToWorld);
-
-                if (particleRuntime.RestAfterSeconds > 0f && particleRuntime.Age >= particleRuntime.RestAfterSeconds)
-                {
-                    particleRuntime.LifecycleState = (byte)ParticleLifecycleState.Resting;
-                    particleRuntime.CurrentSpeed = 0f;
-                    particleRuntime.Velocity = float2.zero;
-                    active.ValueRW = false;
-                    resting.ValueRW = true;
-                }
 
                 runtime.ValueRW = particleRuntime;
                 spriteData.ValueRW = renderData;

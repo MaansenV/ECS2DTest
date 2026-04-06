@@ -62,11 +62,70 @@ namespace ECS2D.Rendering.Tests
         }
 
         [Test]
-        public void EvaluateSpeedMultiplier_DropsToZeroAtRestTime()
+        public void WriteRenderState_UsesBaseScaleWithCurveLUT()
         {
-            Assert.That(ParticleSpawnUtility.EvaluateSpeedMultiplier(0f, 2f), Is.EqualTo(1f).Within(0.0001f));
-            Assert.That(ParticleSpawnUtility.EvaluateSpeedMultiplier(1f, 2f), Is.EqualTo(0.5f).Within(0.0001f));
-            Assert.That(ParticleSpawnUtility.EvaluateSpeedMultiplier(2f, 2f), Is.EqualTo(0f).Within(0.0001f));
+            var scaleCurve = ParticleSpawnUtility.CreateFlatCurveBlob(64, 1f);
+
+            try
+            {
+                var runtime = new ParticleRuntime
+                {
+                    Position = float3.zero,
+                    Age = 0f,
+                    Lifetime = 1f,
+                    ScaleCurve = scaleCurve,
+                    BaseScale = 2f,
+                    StartColor = new float4(1f, 1f, 1f, 1f),
+                    EndColor = new float4(1f, 1f, 1f, 1f)
+                };
+                var spriteData = new SpriteData
+                {
+                    SortingLayer = 0,
+                    SpriteSheetId = 1
+                };
+                var localToWorld = new LocalToWorld
+                {
+                    Value = float4x4.identity
+                };
+
+                ParticleSpawnUtility.WriteRenderState(ref runtime, ref spriteData, ref localToWorld);
+
+                Assert.That(spriteData.Scale, Is.EqualTo(2f).Within(0.001f));
+            }
+            finally
+            {
+                if (scaleCurve.IsCreated)
+                {
+                    scaleCurve.Dispose();
+                }
+            }
+        }
+
+        [Test]
+        public void WriteRenderState_NullCurveUsesBaseScaleAlone()
+        {
+            var runtime = new ParticleRuntime
+            {
+                Position = float3.zero,
+                Age = 0f,
+                Lifetime = 1f,
+                BaseScale = 3f,
+                StartColor = new float4(1f, 1f, 1f, 1f),
+                EndColor = new float4(1f, 1f, 1f, 1f)
+            };
+            var spriteData = new SpriteData
+            {
+                SortingLayer = 0,
+                SpriteSheetId = 1
+            };
+            var localToWorld = new LocalToWorld
+            {
+                Value = float4x4.identity
+            };
+
+            ParticleSpawnUtility.WriteRenderState(ref runtime, ref spriteData, ref localToWorld);
+
+            Assert.That(spriteData.Scale, Is.EqualTo(3f).Within(0.001f));
         }
     }
 }

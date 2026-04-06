@@ -5,7 +5,7 @@ namespace ECS2D.Rendering
 {
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(ParticleRestingExpirySystem))]
+    [UpdateAfter(typeof(ParticleActiveSimulationSystem))]
     public partial struct ParticleEmitterCleanupSystem : ISystem
     {
         public void OnCreate(ref SystemState state)
