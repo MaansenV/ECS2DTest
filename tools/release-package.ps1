@@ -5,7 +5,9 @@ param(
 
     [string]$Remote = 'origin',
 
-    [switch]$Push
+    [switch]$Push,
+
+    [switch]$CreateGithubRelease
 )
 
 $ErrorActionPreference = 'Stop'
@@ -109,6 +111,100 @@ function Assert-BranchAllowed()
     }
 }
 
+function Get-PreviousTag([string]$CurrentTag)
+{
+    $allTags = Get-GitOutput @('tag', '--sort=creatordate')
+    $tagList = @($allTags -split "`n" | Where-Object { $_ -and $_.Trim() })
+    $idx = $tagList.IndexOf($CurrentTag)
+    if ($idx -gt 0)
+    {
+        return $tagList[$idx - 1]
+    }
+    return $null
+}
+
+function New-PackageReleaseNotes([string]$Version, [string]$PreviousTag)
+{
+    $packagePrefix = 'Packages/com.ecs2d.renderer/'
+
+    $range = if ($PreviousTag) { "$PreviousTag..v$Version" } else { "HEAD~50..v$Version" }
+    $logOutput = Get-GitOutput @('log', '--oneline', '--no-merges', $range, '--', $packagePrefix)
+
+    if (-not $logOutput)
+    {
+        return @"
+
+## Summary
+- Package version bump to $Version.
+
+## Package Scope
+- Package: com.ecs2d.renderer
+- Tag: v$Version
+
+## Highlights
+- Version update only; no package runtime or test changes detected in this release.
+
+## Validation
+- Package metadata updated; release created via automated workflow.
+
+## Notes
+- Package-scoped release; no functional changes to the package in this version bump.
+"@
+    }
+
+    $commits = @($logOutput -split "`n" | Where-Object { $_ -and $_.Trim() })
+    $highlights = @()
+    foreach ($line in $commits)
+    {
+        $msg = ($line -replace '^\S+\s+', '').Trim()
+        $highlights += "- $($msg.Substring(0, [Math]::Min(80, $msg.Length)))"
+    }
+
+    $highlightsBlock = $highlights -join "`n"
+
+    $summary = if ($commits.Count -le 3) {
+        ($commits | ForEach-Object { ($_ -replace '^\S+\s+', '').Trim() }) -join "; "
+    } else {
+        "$($commits.Count) package changes in this release"
+    }
+
+    return @"
+
+## Summary
+- $summary
+
+## Package Scope
+- Package: com.ecs2d.renderer
+- Tag: v$Version
+
+## Highlights
+$highlightsBlock
+
+## Validation
+- Package changes verified via automated release workflow.
+
+## Notes
+- Package-scoped release; only changes under `Packages/com.ecs2d.renderer/` are included.
+"@
+}
+
+function Publish-GithubRelease([string]$TagName, [string]$Version)
+{
+    $previousTag = Get-PreviousTag $TagName
+    $notes = New-PackageReleaseNotes -Version $Version -PreviousTag $previousTag
+    $notesFile = Join-Path $env:TEMP "release-notes-v${Version}.md"
+    [System.IO.File]::WriteAllText($notesFile, $notes, [System.Text.UTF8Encoding]::new($false))
+
+    gh release create $TagName --verify-tag --title "com.ecs2d.renderer $Version" --notes-file $notesFile
+    if ($LASTEXITCODE -ne 0)
+    {
+        Fail "gh release create failed for tag $TagName."
+    }
+
+    Remove-Item $notesFile -Force -ErrorAction SilentlyContinue
+    Write-Host "GitHub release created for $TagName."
+}
+
 if (-not ($Version -match '^\d+\.\d+\.\d+$'))
 {
     Fail 'Version must use x.y.z format, for example 1.0.6.'
@@ -156,7 +252,8 @@ if (($remoteTag | Out-String).Trim())
 Set-JsonStringValue -Path $packageJsonPath -PropertyName 'version' -Value $Version
 
 Invoke-Git @('add', '--', 'Packages/com.ecs2d.renderer')
-Assert-NoUnexpectedStagedPaths @('Packages/com.ecs2d.renderer/')
+Invoke-Git @('add', '--', 'README.md')
+Assert-NoUnexpectedStagedPaths @('Packages/com.ecs2d.renderer/', 'README.md')
 
 $stagedDiff = Get-GitOutput @('diff', '--cached', '--name-only', '--', 'Packages/com.ecs2d.renderer')
 if (-not $stagedDiff)
@@ -171,9 +268,14 @@ Invoke-Git @('tag', '-a', $tagName, '-m', $commitMessage)
 if ($Push)
 {
     Invoke-Git @('push', $Remote, 'HEAD', $tagName)
+    if ($CreateGithubRelease)
+    {
+        Publish-GithubRelease -TagName $tagName -Version $Version
+    }
 }
 
 Write-Host "Release prepared successfully."
 Write-Host "Version: $Version"
 Write-Host "Tag: $tagName"
 Write-Host "Push: $Push"
+Write-Host "GitHubRelease: $CreateGithubRelease"

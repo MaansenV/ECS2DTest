@@ -37,16 +37,27 @@ Or in `manifest.json`:
 - Renders ECS sprites through `SpriteSystem`
 - Supports grid-based sprite-sheet animation through `SpriteAnimationSystem`
 - Supports orthographic frustum culling through `SpriteCullingSystem`
+- Provides a DOTS-based particle system with curve-driven speed and scale via LUTs
 - Ships as a reusable package in `Packages/com.ecs2d.renderer`
 
 ## Core assets and types
 
+**Sprite rendering and animation:**
 - `SpriteSheetDefinition`
 - `SpriteDataAuthoring`
 - `SpriteAnimationSetDefinition`
 - `SpriteAnimationAuthoring`
 - `SpriteCullingSettingsAuthoring`
 - `EntitiesReferenceAuthoring`
+
+**Particle system:**
+- `ParticleEmitterAuthoring`
+- `ParticleCurveTypes` (curve LUT support via `CurveBlobLUT` and `ParticleCurveMode`)
+- `ParticleActiveSimulationSystem`, `ParticleEmissionSystem`, `ParticleEmitterCleanupSystem`
+
+**Editor tools ( ECS2D.Rendering.Editor):**
+- Custom inspectors for all authoring components
+- Shared USS stylesheet for consistent inspector styling
 
 Namespace:
 

@@ -11,21 +11,23 @@ Create a new package release without manual file editing, manual version bumping
 From the repo root, run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\release-package.ps1 -Version 1.0.6 -Push
+powershell -ExecutionPolicy Bypass -File .\tools\release-package.ps1 -Version 1.0.6 -Push -CreateGithubRelease
 ```
 
 If the agent should also push the commit and tag to GitHub, keep `-Push`.
 If it should prepare the release locally first, omit `-Push`.
+If it should also create a GitHub release with auto-generated package-scoped changelog notes, add `-CreateGithubRelease` (requires `-Push`).
 
 ## What the script does
 
 1. Validates that the version looks like `x.y.z`
 2. Validates that the git tag `v<version>` does not already exist
 3. Updates `Packages/com.ecs2d.renderer/package.json`
-4. Stages the package directory only: `Packages/com.ecs2d.renderer`
+4. Stages the package directory and the repo-level README.md for the release commit
 5. Creates a release commit
 6. Creates an annotated tag `v<version>`
 7. Optionally pushes `HEAD` and the tag together
+8. Optionally creates a GitHub release with package-scoped changelog notes (generated from commits under `Packages/com.ecs2d.renderer/`)
 
 ## Preconditions
 
@@ -39,7 +41,7 @@ If it should prepare the release locally first, omit `-Push`.
 ## Safety behavior
 
 - The script fails if the target tag already exists locally or on `origin`
-- The script only stages the package folder, so scene/layout/test noise outside the package is not pulled into the release commit
+- The script only stages the package folder and `README.md`, so scene/layout/test noise outside those paths is not pulled into the release commit
 - The script fails if the package folder has no staged diff after the version update, to avoid empty releases
 - The script fails if unrelated staged paths already exist, so agents do not accidentally commit someone else's staged work
 
@@ -51,7 +53,13 @@ If it should prepare the release locally first, omit `-Push`.
 powershell -ExecutionPolicy Bypass -File .\tools\release-package.ps1 -Version 1.0.6
 ```
 
-### Full release to GitHub
+### Full release to GitHub (with GitHub release)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\release-package.ps1 -Version 1.0.6 -Push -CreateGithubRelease
+```
+
+### Full release to GitHub (commit + tag only, no GitHub release notes)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\release-package.ps1 -Version 1.0.6 -Push
@@ -63,6 +71,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\release-package.ps1 -Version 1.
 - Git history contains a release commit
 - Git contains tag `v<version>`
 - With `-Push`, GitHub contains both the commit and the tag
+- With `-CreateGithubRelease`, GitHub also contains a release with package-scoped changelog notes
 
 ## Rollback notes
 
