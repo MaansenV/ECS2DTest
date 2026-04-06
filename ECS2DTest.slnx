@@ -97,6 +97,7 @@
   <Project Path="Unity.Transforms.Hybrid.csproj" />
   <Project Path="Unity.Serialization.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Shaders.csproj" />
+  <Project Path="Assets.Scripts.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Runtime.Shared.csproj" />
   <Project Path="Unity.InternalAPIEngineBridge.004.csproj" />
   <Project Path="Tayx.Graphy.Editor.csproj" />
