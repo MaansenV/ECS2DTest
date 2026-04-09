@@ -3,10 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using Random = Unity.Mathematics.Random;
-
-#if UNITY_EDITOR
 using AnimationCurve = UnityEngine.AnimationCurve;
-#endif
 
 namespace ECS2D.Rendering
 {
@@ -111,7 +108,6 @@ namespace ECS2D.Rendering
             return math.lerp(curve.Value.Samples[lower], curve.Value.Samples[upper], frac);
         }
 
-#if UNITY_EDITOR
         public static BlobAssetReference<CurveBlobLUT> SampleAnimationCurveToBlob(AnimationCurve curve, int sampleCount)
         {
             sampleCount = math.max(1, sampleCount);
@@ -138,7 +134,6 @@ namespace ECS2D.Rendering
 
             return builder.CreateBlobAssetReference<CurveBlobLUT>(Allocator.Persistent);
         }
-#endif
 
         public static BlobAssetReference<CurveBlobLUT> CreateFlatCurveBlob(int sampleCount, float value)
         {
