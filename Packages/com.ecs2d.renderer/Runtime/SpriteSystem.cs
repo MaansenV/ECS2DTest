@@ -38,7 +38,7 @@ namespace ECS2D.Rendering
             [DeallocateOnJobCompletion]
             public NativeArray<int> ChunkBaseEntityIndices;
             [NativeDisableParallelForRestriction] public NativeArray<float4> TranslationAndRotationOutput;
-            [NativeDisableParallelForRestriction] public NativeArray<float> ScaleOutput;
+            [NativeDisableParallelForRestriction] public NativeArray<float2> ScaleOutput;
             [NativeDisableParallelForRestriction] public NativeArray<float4> ColorOutput;
             [NativeDisableParallelForRestriction] public NativeArray<int> FrameIndexOutput;
             [NativeDisableParallelForRestriction] public NativeArray<float2> FlipOutput;
@@ -71,8 +71,12 @@ namespace ECS2D.Rendering
 
             private void WriteSprite(in SpriteData spriteData, int outputIndex)
             {
+                float2 scaleXY = spriteData.ScaleXY.x > 0f || spriteData.ScaleXY.y > 0f
+                    ? spriteData.ScaleXY
+                    : new float2(spriteData.Scale, spriteData.Scale);
+
                 TranslationAndRotationOutput[outputIndex] = spriteData.TranslationAndRotation;
-                ScaleOutput[outputIndex] = spriteData.Scale;
+                ScaleOutput[outputIndex] = scaleXY;
                 ColorOutput[outputIndex] = spriteData.Color;
                 FrameIndexOutput[outputIndex] = math.clamp(spriteData.SpriteFrameIndex, 0, MaxFrameIndex);
                 FlipOutput[outputIndex] = new float2(spriteData.FlipX, spriteData.FlipY);
@@ -363,8 +367,8 @@ namespace ECS2D.Rendering
             public NativeArray<float4> BeginTranslationAndRotationWrite(int count)
                 => frameBuffers[activeFrameBufferIndex].TranslationAndRotationBuffer.BeginWrite<float4>(0, count);
 
-            public NativeArray<float> BeginScaleWrite(int count)
-                => frameBuffers[activeFrameBufferIndex].ScaleBuffer.BeginWrite<float>(0, count);
+            public NativeArray<float2> BeginScaleWrite(int count)
+                => frameBuffers[activeFrameBufferIndex].ScaleBuffer.BeginWrite<float2>(0, count);
 
             public NativeArray<float4> BeginColorWrite(int count)
                 => frameBuffers[activeFrameBufferIndex].ColorBuffer.BeginWrite<float4>(0, count);
@@ -393,7 +397,7 @@ namespace ECS2D.Rendering
                 ref FrameBuffers activeFrameBuffers = ref frameBuffers[activeFrameBufferIndex];
 
                 activeFrameBuffers.TranslationAndRotationBuffer.EndWrite<float4>(WriteIndex);
-                activeFrameBuffers.ScaleBuffer.EndWrite<float>(WriteIndex);
+                activeFrameBuffers.ScaleBuffer.EndWrite<float2>(WriteIndex);
                 activeFrameBuffers.ColorBuffer.EndWrite<float4>(WriteIndex);
                 activeFrameBuffers.FrameIndexBuffer.EndWrite<int>(WriteIndex);
                 activeFrameBuffers.FlipBuffer.EndWrite<float2>(WriteIndex);
@@ -496,7 +500,7 @@ namespace ECS2D.Rendering
                 {
                     Args = new uint[5] { 6, 0, 0, 0, 0 },
                     TranslationAndRotationBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
-                    ScaleBuffer = new ComputeBuffer(capacity, sizeof(float), ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
+                    ScaleBuffer = new ComputeBuffer(capacity, 8, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
                     ColorBuffer = new ComputeBuffer(capacity, 16, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
                     FrameIndexBuffer = new ComputeBuffer(capacity, sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates),
                     FlipBuffer = new ComputeBuffer(capacity, 8, ComputeBufferType.Default, ComputeBufferMode.SubUpdates),

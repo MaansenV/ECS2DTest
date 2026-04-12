@@ -16,6 +16,14 @@ namespace ECS2D.Rendering
         [BurstCompile]
         private partial struct SyncSpriteTransformJob : IJobEntity
         {
+            private static float2 ResolveBaseScaleXY(in SpriteData spriteData)
+            {
+                bool hasExplicitXY = spriteData.BaseScaleXY.x > 0f || spriteData.BaseScaleXY.y > 0f;
+                return hasExplicitXY
+                    ? spriteData.BaseScaleXY
+                    : new float2(spriteData.BaseScale, spriteData.BaseScale);
+            }
+
             private static float NormalizeAngle(float angle)
             {
                 if (math.abs(angle + math.PI) < 0.0001f)
@@ -34,6 +42,7 @@ namespace ECS2D.Rendering
                 float3 position = localToWorld.Position;
 
                 float scaleX = math.length(xAxis);
+                float scaleY = math.length(yAxis);
                 float determinant = (xAxis.x * yAxis.y) - (xAxis.y * yAxis.x);
                 bool reflected = determinant < 0f;
                 float2 deReflectedXAxis = reflected ? -xAxis : xAxis;
@@ -46,15 +55,18 @@ namespace ECS2D.Rendering
                 }
                 else
                 {
-                    float scaleY = math.length(yAxis);
                     float2 fallbackYAxis = reflected ? yAxis : -yAxis;
                     rotationRadians = scaleY > 0.0001f
                         ? NormalizeAngle(math.atan2(-fallbackYAxis.x, fallbackYAxis.y))
                         : 0f;
                 }
 
+                float2 resolvedBaseScaleXY = ResolveBaseScaleXY(spriteData);
+                float2 scaleXY = new float2(scaleX, scaleY) * resolvedBaseScaleXY;
+
                 spriteData.TranslationAndRotation = new float4(position, rotationRadians + spriteData.RotationOffsetRadians);
-                spriteData.Scale = scaleX * spriteData.BaseScale;
+                spriteData.Scale = scaleXY.x;
+                spriteData.ScaleXY = scaleXY;
                 spriteData.RenderDepth = SpriteSortingUtility.CalculateRenderDepth(spriteData.SortingLayer, position.y, spriteData.SpriteSheetId, position.z);
                 spriteData.FlipX = (byte)(reflected ? 1 : 0);
                 spriteData.FlipY = 0;

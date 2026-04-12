@@ -28,7 +28,7 @@
             fixed _Cutoff;
 
             StructuredBuffer<float4> translationAndRotationBuffer;
-            StructuredBuffer<float> scaleBuffer;
+            StructuredBuffer<float2> scaleBuffer;
             StructuredBuffer<float4> colorsBuffer;
             StructuredBuffer<float4> uvBuffer;
             StructuredBuffer<int> frameIndexBuffer;
@@ -58,12 +58,15 @@
                 int frameIndex = frameIndexBuffer[instanceID];
                 float4 uv = uvBuffer[frameIndex];
 
-                // Rotate the vertex
-                v.vertex = mul(v.vertex - float4(0.5, 0.5, 0, 0), rotationZMatrix(translationAndRot.w));
-
                 // Scale it
-                float scale = scaleBuffer[instanceID];
-                float3 worldPosition = translationAndRot.xyz + (v.vertex.xyz * scale);
+                float2 scale = scaleBuffer[instanceID];
+                float4 localVertex = v.vertex - float4(0.5, 0.5, 0, 0);
+                localVertex.x *= scale.x;
+                localVertex.y *= scale.y;
+
+                // Rotate the scaled vertex
+                float4 rotatedVertex = mul(localVertex, rotationZMatrix(translationAndRot.w));
+                float3 worldPosition = translationAndRot.xyz + rotatedVertex.xyz;
 
                 v2f o;
                 o.pos = UnityObjectToClipPos(float4(worldPosition, 1.0f));

@@ -20,6 +20,9 @@ namespace ECS2D.Rendering
         [Range(0.01f, 100f)]
         public float BaseScale = 1f;
 
+        [Tooltip("Optional non-uniform sprite size multiplier. When set, this overrides BaseScale and applies separate X/Y scaling.")]
+        public Vector2 BaseScaleXY;
+
         [Tooltip("Vertex color tint applied when rendering this sprite.")]
         public float4 Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -35,6 +38,31 @@ namespace ECS2D.Rendering
 
         private class SpriteDataAuthoringBaker : Baker<SpriteDataAuthoring>
         {
+            private static float2 ResolveBaseScaleXY(SpriteDataAuthoring authoring)
+            {
+                Vector2 explicitScaleXY = authoring.BaseScaleXY;
+                bool hasExplicitXY = explicitScaleXY.x > 0f || explicitScaleXY.y > 0f;
+                if (!hasExplicitXY)
+                {
+                    return new float2(authoring.BaseScale, authoring.BaseScale);
+                }
+
+                return math.max(float2.zero, new float2(explicitScaleXY.x, explicitScaleXY.y));
+            }
+
+            private static bool HasMixedLegacyAndXYScale(SpriteDataAuthoring authoring, float2 resolvedScaleXY)
+            {
+                Vector2 explicitScaleXY = authoring.BaseScaleXY;
+                bool hasExplicitXY = explicitScaleXY.x > 0f || explicitScaleXY.y > 0f;
+                if (!hasExplicitXY)
+                {
+                    return false;
+                }
+
+                return math.abs(authoring.BaseScale - resolvedScaleXY.x) > 0.0001f
+                    || math.abs(authoring.BaseScale - resolvedScaleXY.y) > 0.0001f;
+            }
+
             private static bool TryResolveAnimationStartFrame(SpriteAnimationAuthoring animationAuthoring, out int spriteFrameIndex)
             {
                 spriteFrameIndex = 0;
@@ -120,9 +148,11 @@ namespace ECS2D.Rendering
                 DependsOn(authoring.SpriteSheet);
 
                 Vector3 lossyScale = authoring.transform.lossyScale;
-                if (math.abs(lossyScale.x - lossyScale.y) > 0.0001f)
+                float2 baseScaleXY = ResolveBaseScaleXY(authoring);
+
+                if (HasMixedLegacyAndXYScale(authoring, baseScaleXY))
                 {
-                    Debug.LogWarning($"{nameof(SpriteDataAuthoring)} on '{authoring.name}' uses non-uniform scale. The renderer will use X scale for a uniform sprite size.");
+                    Debug.LogWarning($"{nameof(SpriteDataAuthoring)} on '{authoring.name}' has both BaseScale and BaseScaleXY set. BaseScaleXY will take precedence.");
                 }
 
                 bool flipX = authoring.FlipX ^ (lossyScale.x < 0f);
@@ -139,15 +169,17 @@ namespace ECS2D.Rendering
 
                 float rotationOffsetRadians = math.radians(authoring.RotationOffsetDegrees);
                 float rotationRadians = math.radians(authoring.transform.eulerAngles.z) + rotationOffsetRadians;
-                float scale = authoring.BaseScale * math.abs(lossyScale.x);
+                float2 scaleXY = baseScaleXY * math.abs(new float2(lossyScale.x, lossyScale.y));
                 Vector3 position = authoring.transform.position;
 
                 var data = new SpriteData
                 {
                     TranslationAndRotation = new float4(position.x, position.y, position.z, rotationRadians),
                     BaseScale = authoring.BaseScale,
+                    BaseScaleXY = baseScaleXY,
                     RotationOffsetRadians = rotationOffsetRadians,
-                    Scale = scale,
+                    Scale = scaleXY.x,
+                    ScaleXY = scaleXY,
                     Color = authoring.Color,
                     RenderDepth = SpriteSortingUtility.CalculateRenderDepth(authoring.SortingLayer, position.y, authoring.SpriteSheet.SheetId, position.z),
                     SpriteFrameIndex = spriteFrameIndex,

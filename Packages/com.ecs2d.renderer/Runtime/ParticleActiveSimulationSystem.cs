@@ -44,6 +44,7 @@ namespace ECS2D.Rendering
                     particleRuntime.CurrentSpeed = 0f;
                     particleRuntime.Velocity = float2.zero;
                     renderData.Scale = 0f;
+                    renderData.ScaleXY = float2.zero;
                     renderData.Color = float4.zero;
                     runtime.ValueRW = particleRuntime;
                     spriteData.ValueRW = renderData;

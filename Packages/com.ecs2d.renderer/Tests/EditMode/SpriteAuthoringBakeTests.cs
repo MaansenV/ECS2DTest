@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Entities;
 using UnityEngine;
@@ -464,5 +465,6 @@ namespace ECS2D.Rendering.Tests
                 .GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.SetValue(definition, value);
         }
+
     }
 }

@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ECS2D.Rendering.Editor
@@ -8,6 +9,7 @@ namespace ECS2D.Rendering.Editor
     public sealed class SpriteDataAuthoringEditor : UnityEditor.Editor
     {
         private const string StylesheetPath = "Packages/com.ecs2d.renderer/Editor/Styles/ECS2DInspectorStyles.uss";
+        private const string ScaleModeKeyPrefix = "ecs2d-sprite-scale-mode-";
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -24,6 +26,7 @@ namespace ECS2D.Rendering.Editor
             var sortingLayer = serializedObject.FindProperty("SortingLayer");
             var spriteFrameIndex = serializedObject.FindProperty("SpriteFrameIndex");
             var baseScale = serializedObject.FindProperty("BaseScale");
+            var baseScaleXY = serializedObject.FindProperty("BaseScaleXY");
             var color = serializedObject.FindProperty("Color");
             var rotationOffsetDegrees = serializedObject.FindProperty("RotationOffsetDegrees");
             var flipX = serializedObject.FindProperty("FlipX");
@@ -44,8 +47,33 @@ namespace ECS2D.Rendering.Editor
             transformFoldout.AddToClassList("ecs2d-section");
             transformFoldout.AddToClassList("ecs2d-foldout");
             transformFoldout.AddToClassList("ecs2d-section-shape");
-            transformFoldout.Add(new PropertyField(baseScale));
+
+            string scaleModeKey = ScaleModeKeyPrefix + target.GetInstanceID();
+            bool advancedMode = SessionState.GetBool(scaleModeKey, false);
+
+            var scaleModeToggle = new Toggle("Advanced XY Scale")
+            {
+                value = advancedMode
+            };
+            scaleModeToggle.AddToClassList("ecs2d-field-spacing");
+
+            var baseScaleField = new PropertyField(baseScale);
+            var baseScaleXYField = new PropertyField(baseScaleXY);
+
+            void RefreshScaleMode(bool isAdvanced)
+            {
+                baseScaleField.style.display = isAdvanced ? DisplayStyle.None : DisplayStyle.Flex;
+                baseScaleXYField.style.display = isAdvanced ? DisplayStyle.Flex : DisplayStyle.None;
+                SessionState.SetBool(scaleModeKey, isAdvanced);
+            }
+
+            scaleModeToggle.RegisterValueChangedCallback(evt => RefreshScaleMode(evt.newValue));
+
+            transformFoldout.Add(scaleModeToggle);
+            transformFoldout.Add(baseScaleField);
+            transformFoldout.Add(baseScaleXYField);
             transformFoldout.Add(new PropertyField(rotationOffsetDegrees));
+            RefreshScaleMode(advancedMode);
             root.Add(transformFoldout);
 
             var displayFoldout = new Foldout { text = "Display", viewDataKey = "sprite-data-section-display" };

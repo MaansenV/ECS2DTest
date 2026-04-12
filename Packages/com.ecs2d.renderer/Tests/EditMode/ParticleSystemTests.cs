@@ -6,6 +6,7 @@ using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace ECS2D.Rendering.Tests
 {

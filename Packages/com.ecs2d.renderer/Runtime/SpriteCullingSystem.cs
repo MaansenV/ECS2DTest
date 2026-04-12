@@ -34,8 +34,9 @@ namespace ECS2D.Rendering
             private void Execute(in LocalToWorld localToWorld, EnabledRefRW<SpriteCullState> cullState)
             {
                 float3 position = localToWorld.Position;
-                float scale = math.length(localToWorld.Value.c0.xyz);
-                float halfExtent = (math.abs(scale) * 0.5f) + Padding;
+                float scaleX = math.length(localToWorld.Value.c0.xyz);
+                float scaleY = math.length(localToWorld.Value.c1.xyz);
+                float halfExtent = (math.max(math.abs(scaleX), math.abs(scaleY)) * 0.5f) + Padding;
                 float2 spritePosition = position.xy;
                 float2 spriteMin = spritePosition - halfExtent;
                 float2 spriteMax = spritePosition + halfExtent;

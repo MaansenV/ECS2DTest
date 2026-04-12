@@ -47,6 +47,8 @@ namespace ECS2D.Rendering
         [Tooltip("Base particle scale applied before curve evaluation.")]
         [Range(0.01f, 100f)]
         public float BaseScale = 1f;
+        [Tooltip("Optional non-uniform base particle scale. When set, this overrides BaseScale and applies separate X/Y scaling.")]
+        public Vector2 BaseScaleXY;
         [Tooltip("Particle start color.")]
         public Color StartColor = Color.white;
         [Tooltip("Particle end color.")]
@@ -77,6 +79,18 @@ namespace ECS2D.Rendering
 
         private sealed class Baker : Baker<ParticleEmitterAuthoring>
         {
+            private static float2 ResolveBaseScaleXY(ParticleEmitterAuthoring authoring)
+            {
+                Vector2 explicitScaleXY = authoring.BaseScaleXY;
+                bool hasExplicitXY = explicitScaleXY.x > 0f || explicitScaleXY.y > 0f;
+                if (!hasExplicitXY)
+                {
+                    return new float2(authoring.BaseScale, authoring.BaseScale);
+                }
+
+                return math.max(float2.zero, new float2(explicitScaleXY.x, explicitScaleXY.y));
+            }
+
             public override void Bake(ParticleEmitterAuthoring authoring)
             {
                 if (authoring.SpriteSheet == null)
@@ -105,6 +119,13 @@ namespace ECS2D.Rendering
                 int burstCount = authoring.Enabled ? math.max(0, authoring.BurstCount) : 0;
                 BlobAssetReference<CurveBlobLUT> speedCurve = ParticleSpawnUtility.SampleAnimationCurveToBlob(authoring.SpeedCurve, CurveBlobLUT.kSampleCount);
                 BlobAssetReference<CurveBlobLUT> scaleCurve = ParticleSpawnUtility.SampleAnimationCurveToBlob(authoring.ScaleCurve, CurveBlobLUT.kSampleCount);
+                float2 baseScaleXY = ResolveBaseScaleXY(authoring);
+
+                bool hasExplicitXY = authoring.BaseScaleXY.x > 0f || authoring.BaseScaleXY.y > 0f;
+                if (hasExplicitXY && (math.abs(authoring.BaseScale - baseScaleXY.x) > 0.0001f || math.abs(authoring.BaseScale - baseScaleXY.y) > 0.0001f))
+                {
+                    Debug.LogWarning($"{nameof(ParticleEmitterAuthoring)} on '{authoring.name}' has both BaseScale and BaseScaleXY set. BaseScaleXY will take precedence.");
+                }
 
                 float4 startColor = new float4(authoring.StartColor.r, authoring.StartColor.g, authoring.StartColor.b, authoring.StartColor.a);
                 float4 endColor = new float4(authoring.EndColor.r, authoring.EndColor.g, authoring.EndColor.b, authoring.EndColor.a);
@@ -126,6 +147,7 @@ namespace ECS2D.Rendering
                     SpeedCurveMode = (byte)authoring.SpeedCurveMode,
                     ScaleCurveMode = (byte)authoring.ScaleCurveMode,
                     BaseScale = math.max(0f, authoring.BaseScale),
+                    BaseScaleXY = baseScaleXY,
                     StartColor = startColor,
                     EndColor = endColor,
                     CircleRadius = math.max(0f, authoring.CircleRadius),
@@ -163,6 +185,7 @@ namespace ECS2D.Rendering
                         SpeedCurve = speedCurve,
                         ScaleCurve = scaleCurve,
                         BaseScale = math.max(0f, authoring.BaseScale),
+                        BaseScaleXY = baseScaleXY,
                         StartColor = startColor,
                         EndColor = endColor,
                         LifecycleState = (byte)ParticleLifecycleState.Inactive
@@ -179,8 +202,10 @@ namespace ECS2D.Rendering
                     {
                         TranslationAndRotation = float4.zero,
                         BaseScale = 1f,
+                        BaseScaleXY = new float2(1f, 1f),
                         RotationOffsetRadians = 0f,
                         Scale = 0f,
+                        ScaleXY = float2.zero,
                         Color = new float4(authoring.StartColor.r, authoring.StartColor.g, authoring.StartColor.b, 0f),
                         RenderDepth = 0f,
                         SpriteFrameIndex = spriteFrameIndex,

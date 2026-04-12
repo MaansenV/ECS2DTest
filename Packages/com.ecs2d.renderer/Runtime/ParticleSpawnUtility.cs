@@ -159,8 +159,15 @@ namespace ECS2D.Rendering
             ref SpriteData spriteData,
             ref LocalToWorld localToWorld)
         {
+            float curveScale = EvaluateCurveLUT(runtime.ScaleCurve, EvaluateLifetimeFraction(runtime.Age, runtime.Lifetime));
+            float2 baseScaleXY = runtime.BaseScaleXY.x > 0f || runtime.BaseScaleXY.y > 0f
+                ? runtime.BaseScaleXY
+                : new float2(runtime.BaseScale, runtime.BaseScale);
+            float2 scaleXY = baseScaleXY * curveScale;
+
             spriteData.TranslationAndRotation = new float4(runtime.Position, runtime.RotationRadians);
-            spriteData.Scale = runtime.BaseScale * EvaluateCurveLUT(runtime.ScaleCurve, EvaluateLifetimeFraction(runtime.Age, runtime.Lifetime));
+            spriteData.Scale = scaleXY.x;
+            spriteData.ScaleXY = scaleXY;
             spriteData.Color = EvaluateColor(runtime.StartColor, runtime.EndColor, runtime.Age, runtime.Lifetime);
             spriteData.RenderDepth = SpriteSortingUtility.CalculateRenderDepth(
                 spriteData.SortingLayer,
@@ -171,7 +178,7 @@ namespace ECS2D.Rendering
             localToWorld.Value = float4x4.TRS(
                 runtime.Position,
                 quaternion.RotateZ(runtime.RotationRadians),
-                new float3(math.max(0.0001f, spriteData.Scale), math.max(0.0001f, spriteData.Scale), 1f));
+                new float3(math.max(0.0001f, scaleXY.x), math.max(0.0001f, scaleXY.y), 1f));
         }
 
         public static float2 NormalizeOrDefault(float2 value, float2 fallback)

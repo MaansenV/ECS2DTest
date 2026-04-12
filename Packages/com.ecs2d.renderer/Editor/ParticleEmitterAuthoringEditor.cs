@@ -65,6 +65,7 @@ namespace ECS2D.Rendering.Editor
                 "particle-emitter-section-scale-color",
                 "ecs2d-section-color",
                 "BaseScale",
+                "BaseScaleXY",
                 "ScaleCurve",
                 "ScaleCurveMode",
                 "StartColor",

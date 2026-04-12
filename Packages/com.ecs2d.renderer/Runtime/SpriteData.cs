@@ -7,8 +7,10 @@ namespace ECS2D.Rendering
     {
         public float4 TranslationAndRotation;
         public float BaseScale;
+        public float2 BaseScaleXY;
         public float RotationOffsetRadians;
         public float Scale;
+        public float2 ScaleXY;
         public float4 Color;
         public float RenderDepth;
         public int SpriteFrameIndex;

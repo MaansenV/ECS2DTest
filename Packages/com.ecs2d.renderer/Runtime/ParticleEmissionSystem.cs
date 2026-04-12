@@ -120,6 +120,7 @@ namespace ECS2D.Rendering
             runtime.InitialSpeed = initialSpeed;
             runtime.CurrentSpeed = initialSpeed;
             runtime.BaseScale = emitter.BaseScale;
+            runtime.BaseScaleXY = emitter.BaseScaleXY;
             runtime.StartColor = emitter.StartColor;
             runtime.EndColor = emitter.EndColor;
             runtime.LifecycleState = (byte)ParticleLifecycleState.Active;
@@ -129,6 +130,7 @@ namespace ECS2D.Rendering
             spriteData.SpriteSheetId = emitter.SheetId;
             spriteData.SortingLayer = emitter.SortingLayer;
             spriteData.BaseScale = 1f;
+            spriteData.BaseScaleXY = new float2(1f, 1f);
             spriteData.RotationOffsetRadians = 0f;
 
             LocalToWorld localToWorld = entityManager.GetComponentData<LocalToWorld>(particleEntity);

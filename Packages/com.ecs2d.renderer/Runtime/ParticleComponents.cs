@@ -37,6 +37,7 @@ namespace ECS2D.Rendering
         public BlobAssetReference<CurveBlobLUT> SpeedCurve;
         public BlobAssetReference<CurveBlobLUT> ScaleCurve;
         public float BaseScale;
+        public float2 BaseScaleXY;
         public float4 StartColor;
         public float4 EndColor;
         public float CircleRadius;
@@ -86,6 +87,7 @@ namespace ECS2D.Rendering
         public float InitialSpeed;
         public float CurrentSpeed;
         public float BaseScale;
+        public float2 BaseScaleXY;
         public float4 StartColor;
         public float4 EndColor;
         public byte LifecycleState;
