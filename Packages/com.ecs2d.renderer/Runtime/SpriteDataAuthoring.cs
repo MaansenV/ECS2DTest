@@ -50,19 +50,6 @@ namespace ECS2D.Rendering
                 return math.max(float2.zero, new float2(explicitScaleXY.x, explicitScaleXY.y));
             }
 
-            private static bool HasMixedLegacyAndXYScale(SpriteDataAuthoring authoring, float2 resolvedScaleXY)
-            {
-                Vector2 explicitScaleXY = authoring.BaseScaleXY;
-                bool hasExplicitXY = explicitScaleXY.x > 0f || explicitScaleXY.y > 0f;
-                if (!hasExplicitXY)
-                {
-                    return false;
-                }
-
-                return math.abs(authoring.BaseScale - resolvedScaleXY.x) > 0.0001f
-                    || math.abs(authoring.BaseScale - resolvedScaleXY.y) > 0.0001f;
-            }
-
             private static bool TryResolveAnimationStartFrame(SpriteAnimationAuthoring animationAuthoring, out int spriteFrameIndex)
             {
                 spriteFrameIndex = 0;
@@ -149,11 +136,6 @@ namespace ECS2D.Rendering
 
                 Vector3 lossyScale = authoring.transform.lossyScale;
                 float2 baseScaleXY = ResolveBaseScaleXY(authoring);
-
-                if (HasMixedLegacyAndXYScale(authoring, baseScaleXY))
-                {
-                    Debug.LogWarning($"{nameof(SpriteDataAuthoring)} on '{authoring.name}' has both BaseScale and BaseScaleXY set. BaseScaleXY will take precedence.");
-                }
 
                 bool flipX = authoring.FlipX ^ (lossyScale.x < 0f);
                 bool flipY = authoring.FlipY ^ (lossyScale.y < 0f);

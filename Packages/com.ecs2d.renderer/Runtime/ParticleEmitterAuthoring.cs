@@ -121,12 +121,6 @@ namespace ECS2D.Rendering
                 BlobAssetReference<CurveBlobLUT> scaleCurve = ParticleSpawnUtility.SampleAnimationCurveToBlob(authoring.ScaleCurve, CurveBlobLUT.kSampleCount);
                 float2 baseScaleXY = ResolveBaseScaleXY(authoring);
 
-                bool hasExplicitXY = authoring.BaseScaleXY.x > 0f || authoring.BaseScaleXY.y > 0f;
-                if (hasExplicitXY && (math.abs(authoring.BaseScale - baseScaleXY.x) > 0.0001f || math.abs(authoring.BaseScale - baseScaleXY.y) > 0.0001f))
-                {
-                    Debug.LogWarning($"{nameof(ParticleEmitterAuthoring)} on '{authoring.name}' has both BaseScale and BaseScaleXY set. BaseScaleXY will take precedence.");
-                }
-
                 float4 startColor = new float4(authoring.StartColor.r, authoring.StartColor.g, authoring.StartColor.b, authoring.StartColor.a);
                 float4 endColor = new float4(authoring.EndColor.r, authoring.EndColor.g, authoring.EndColor.b, authoring.EndColor.a);
 
