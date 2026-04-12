@@ -23,6 +23,9 @@ namespace ECS2D.Rendering
         [Tooltip("Optional non-uniform sprite size multiplier. When set, this overrides BaseScale and applies separate X/Y scaling.")]
         public Vector2 BaseScaleXY;
 
+        [SerializeField, HideInInspector]
+        private bool useAdvancedScaleXY;
+
         [Tooltip("Vertex color tint applied when rendering this sprite.")]
         public float4 Color = new float4(1.0f, 1.0f, 1.0f, 1.0f);
 

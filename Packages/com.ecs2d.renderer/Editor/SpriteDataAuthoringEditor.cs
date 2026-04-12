@@ -9,7 +9,6 @@ namespace ECS2D.Rendering.Editor
     public sealed class SpriteDataAuthoringEditor : UnityEditor.Editor
     {
         private const string StylesheetPath = "Packages/com.ecs2d.renderer/Editor/Styles/ECS2DInspectorStyles.uss";
-        private const string ScaleModeKeyPrefix = "ecs2d-sprite-scale-mode-";
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -27,6 +26,7 @@ namespace ECS2D.Rendering.Editor
             var spriteFrameIndex = serializedObject.FindProperty("SpriteFrameIndex");
             var baseScale = serializedObject.FindProperty("BaseScale");
             var baseScaleXY = serializedObject.FindProperty("BaseScaleXY");
+            var useAdvancedScaleXY = serializedObject.FindProperty("useAdvancedScaleXY");
             var color = serializedObject.FindProperty("Color");
             var rotationOffsetDegrees = serializedObject.FindProperty("RotationOffsetDegrees");
             var flipX = serializedObject.FindProperty("FlipX");
@@ -48,8 +48,7 @@ namespace ECS2D.Rendering.Editor
             transformFoldout.AddToClassList("ecs2d-foldout");
             transformFoldout.AddToClassList("ecs2d-section-shape");
 
-            string scaleModeKey = ScaleModeKeyPrefix + target.GetInstanceID();
-            bool advancedMode = SessionState.GetBool(scaleModeKey, false);
+            bool advancedMode = useAdvancedScaleXY.boolValue;
 
             var scaleModeToggle = new Toggle("Advanced XY Scale")
             {
@@ -64,7 +63,11 @@ namespace ECS2D.Rendering.Editor
             {
                 baseScaleField.style.display = isAdvanced ? DisplayStyle.None : DisplayStyle.Flex;
                 baseScaleXYField.style.display = isAdvanced ? DisplayStyle.Flex : DisplayStyle.None;
-                SessionState.SetBool(scaleModeKey, isAdvanced);
+                if (useAdvancedScaleXY.boolValue != isAdvanced)
+                {
+                    useAdvancedScaleXY.boolValue = isAdvanced;
+                    serializedObject.ApplyModifiedProperties();
+                }
             }
 
             scaleModeToggle.RegisterValueChangedCallback(evt => RefreshScaleMode(evt.newValue));
