@@ -32,8 +32,9 @@ Or add it to `manifest.json`:
 2. Assign its material, texture, bounds, and grid settings.
 3. Add `SpriteDataAuthoring` to a prefab or GameObject.
 4. Assign the `SpriteSheetDefinition` and choose the initial frame.
-5. Optional: add `SpriteAnimationAuthoring` with a `SpriteAnimationSetDefinition`.
-6. Optional: add `SpriteCullingSettingsAuthoring` in the scene.
+5. Optional: use `Sprite Sheet Wizard` to create or update the sprite sheet and animation set from editor tooling.
+6. Optional: add `SpriteAnimationAuthoring` with a `SpriteAnimationSetDefinition`.
+7. Optional: add `SpriteCullingSettingsAuthoring` in the scene.
 
 ## Main types
 
@@ -59,6 +60,12 @@ Or add it to `manifest.json`:
 - `SpriteCullingSettingsAuthoring`
 - `EntitiesReferenceAuthoring`
 
+## Editor tools
+
+- Custom inspectors for authoring components
+- `Sprite Sheet Wizard`
+- `Sprite Sheet Overview`
+
 ## Included runtime assets
 
 - `Third.mat`
@@ -70,5 +77,7 @@ Or add it to `manifest.json`:
 
 - `SpriteAnimationAuthoring` expects a grid-based `SpriteSheetDefinition`.
 - Animation clips are authored by `Row`, `StartColumn`, and `FrameCount`.
+- `SpriteDataAuthoring` supports both `BaseScale` and `BaseScaleXY`; `BaseScaleXY` overrides uniform scale when set.
+- Sprite sheets that should be auto-discovered at runtime must live under a `Resources/SpriteSheets` path.
 - Culling currently targets the main orthographic camera workflow.
 - The sample repo also includes scenes and prefabs showing the package in use.

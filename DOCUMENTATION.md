@@ -91,9 +91,15 @@ Attach `SpriteDataAuthoring` to a GameObject or Prefab to author a 2D sprite ent
 | `SpriteSheet` | `SpriteSheetDefinition` | `null` | Reference to the sprite sheet asset. **Required.** |
 | `SortingLayer` | `int` | `0` | Custom ECS sorting layer. Higher values render in front of lower values, even across different sprite sheets. Within the same layer, sorting continues by `transform.position.y`. |
 | `SpriteFrameIndex` | `int` | `0` | Index of the frame to display initially. Clamped to valid range during baking. |
-| `BaseScale` | `float` | `1f` | Scale multiplier. The final baked scale is `BaseScale * transform.lossyScale.x`. **Only the X-axis scale is used** (the renderer expects uniform scaling). Non-uniform scaling will log a warning. |
+| `BaseScale` | `float` | `1f` | Legacy uniform scale multiplier. Used when `BaseScaleXY` is left at zero. |
+| `BaseScaleXY` | `Vector2` | `(0,0)` | Optional non-uniform sprite scale. When either axis is greater than zero, it overrides `BaseScale` and is multiplied with the GameObject's absolute X/Y transform scale during baking. |
 | `Color` | `float4` | `(1,1,1,1)` | RGBA tint color. |
 | `RotationOffsetDegrees` | `float` | `0` | Additional rotation offset in degrees. Final baked rotation (in radians) = `transform.eulerAngles.z + RotationOffsetDegrees`. |
+
+**Scale behavior:**
+- Leave `BaseScaleXY` at `(0,0)` to use uniform `BaseScale`.
+- Set `BaseScaleXY` to use explicit X/Y sprite scaling.
+- If both are set, `BaseScaleXY` takes precedence.
 
 **Example — setup via code:**
 
@@ -581,3 +587,40 @@ All systems run in the `PresentationSystemGroup` (except `SpriteAnimationChangeR
 | `SpriteCullingSystem` | `PresentationSystemGroup` | After `SpriteTransformSyncSystem` | Performs orthographic frustum culling. Enables/disables `SpriteCullState` based on camera visibility. |
 | `SpriteAnimationSystem` | `PresentationSystemGroup` | After `SpriteCullingSystem` | Advances animation time, evaluates frame indices, and updates `SpriteData.SpriteFrameIndex`. |
 | `SpriteSystem` | `PresentationSystemGroup` | Last | Main rendering system. Batches visible sprites by `SpriteSheetRenderKey` and draws them via `Graphics.DrawMeshInstancedIndirect`. Uses burst-compiled jobs to upload sprite data to compute buffers. |
+
+---
+
+## 11. Editor Tools
+
+The package includes editor tooling in the `ECS2D.Rendering.Editor` assembly.
+
+### Included tools
+
+- Custom inspectors for authoring components
+- `Sprite Sheet Wizard` for guided creation/update of `SpriteSheetDefinition` and `SpriteAnimationSetDefinition`
+- `Sprite Sheet Overview` for project-wide listing of sprite sheet assets with ID lookup helpers
+
+### Sprite Sheet Wizard
+
+Open from:
+- `Tools > ECS2D > Sprite Sheet Wizard`
+- `Assets > ECS2D > Open Sprite Sheet Wizard`
+
+Current MVP behavior:
+- 3-step guided flow
+- Creates or updates one sprite sheet plus one animation set per run
+- Supports `Texture2D`, `Sprite`, existing `SpriteSheetDefinition`, and existing `SpriteAnimationSetDefinition` as starting points
+- Requires output under a `Resources/SpriteSheets` path so runtime auto-loading continues to work
+- Uses grid-based animation setup compatible with `SpriteAnimationAuthoring`
+
+### Sprite Sheet Overview
+
+Open from:
+- `Tools > ECS2D > Sprite Sheet Overview`
+- `Assets > ECS2D > Open Sprite Sheet Overview`
+
+Current MVP behavior:
+- Read-only project-wide scan for `SpriteSheetDefinition`
+- Filter by ID, name, and path
+- Shows frame count and linked animation clip totals
+- Quick actions for open, ping, and copy ID

@@ -58,6 +58,8 @@ Or in `manifest.json`:
 **Editor tools ( ECS2D.Rendering.Editor):**
 - Custom inspectors for all authoring components
 - Shared USS stylesheet for consistent inspector styling
+- `Sprite Sheet Wizard` for guided creation/update of sprite sheets and animation sets
+- `Sprite Sheet Overview` for project-wide sprite sheet lookup by ID/name/path
 
 Namespace:
 
@@ -86,9 +88,12 @@ This validates the version, bumps the package version, creates a commit with an 
 1. Install the package.
 2. Create a `SpriteSheetDefinition` for your material and texture.
 3. Add `SpriteDataAuthoring` to a prefab or GameObject and assign that sheet.
-4. If you want animation, create a `SpriteAnimationSetDefinition` and add `SpriteAnimationAuthoring`.
-5. If you want runtime culling control, add `SpriteCullingSettingsAuthoring` in the scene.
-6. Enter Play Mode and let the ECS systems animate, cull, and render your sprites.
+4. Optional: use the `Sprite Sheet Wizard` to create/update a `SpriteSheetDefinition` and `SpriteAnimationSetDefinition`.
+5. If you want animation, create a `SpriteAnimationSetDefinition` and add `SpriteAnimationAuthoring`.
+6. `SpriteDataAuthoring` supports both uniform `BaseScale` and explicit `BaseScaleXY` scaling.
+7. Place runtime-loaded sheets under a `Resources/SpriteSheets` path.
+8. If you want runtime culling control, add `SpriteCullingSettingsAuthoring` in the scene.
+9. Enter Play Mode and let the ECS systems animate, cull, and render your sprites.
 
 ## Included examples
 
