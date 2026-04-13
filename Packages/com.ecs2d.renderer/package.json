@@ -1,6 +1,6 @@
 {
   "name": "com.ecs2d.renderer",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "displayName": "ECS2D Rendering",
   "description": "Reusable ECS sprite rendering core for Unity projects.",
   "unity": "6000.3",

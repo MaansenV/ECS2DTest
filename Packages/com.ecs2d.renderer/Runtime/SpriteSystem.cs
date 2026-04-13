@@ -174,7 +174,6 @@ namespace ECS2D.Rendering
             }
 
             filteredSpriteQuery.ResetFilter();
-            Dependency = default;
 
             if (renderedSpriteCount < totalSpriteCount)
             {
