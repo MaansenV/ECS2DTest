@@ -16,6 +16,10 @@ namespace ECS2D.Rendering
 
         public void OnUpdate(ref SystemState state)
         {
+            state.EntityManager.CompleteDependencyBeforeRW<ParticleRuntime>();
+            state.EntityManager.CompleteDependencyBeforeRW<SpriteData>();
+            state.EntityManager.CompleteDependencyBeforeRW<LocalToWorld>();
+
             float deltaTime = SystemAPI.Time.DeltaTime;
             var entityManager = state.EntityManager;
 

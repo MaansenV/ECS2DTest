@@ -26,6 +26,10 @@ namespace Systems
 
         public void OnUpdate(ref SystemState state)
         {
+            state.EntityManager.CompleteDependencyBeforeRW<SpriteData>();
+            state.EntityManager.CompleteDependencyBeforeRW<LocalToWorld>();
+            state.EntityManager.CompleteDependencyBeforeRW<LocalTransform>();
+
             var spawnSettings = SystemAPI.GetSingleton<SpawnSettings>();
             if (!spawnSettings.Enabled)
             {
