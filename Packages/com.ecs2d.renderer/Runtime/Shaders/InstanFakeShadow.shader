@@ -5,8 +5,8 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
         _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.4)
         _ShadowLocalOffsetX ("Shadow Local Offset X", Float) = 0
         _ShadowLocalOffsetY ("Shadow Local Offset Y", Float) = -0.18
-        _ShadowOffsetX ("Shadow Offset X", Float) = 0
-        _ShadowOffsetY ("Shadow Offset Y", Float) = 0
+        _ShadowOffsetX ("Shadow Offset X (Legacy)", Float) = 0
+        _ShadowOffsetY ("Shadow Offset Y (Legacy)", Float) = 0
         _ShadowScaleX ("Shadow Scale X", Float) = 1.1
         _ShadowScaleY ("Shadow Scale Y", Float) = 0.35
         _ShadowSkewX ("Shadow Skew X", Float) = 0.35
