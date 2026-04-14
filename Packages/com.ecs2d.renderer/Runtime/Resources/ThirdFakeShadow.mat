@@ -31,7 +31,8 @@ Material:
     m_Floats:
     - _Cutoff: 0.5
     - _ShadowAnchorMode: 1
-    - _ShadowDepthBias: -0.0005
+    - _ShadowBlurStrength: 1.98
+    - _ShadowDepthBias: 0.0005
     - _ShadowLocalOffsetX: 0
     - _ShadowLocalOffsetY: 0.1
     - _ShadowOffsetX: 0

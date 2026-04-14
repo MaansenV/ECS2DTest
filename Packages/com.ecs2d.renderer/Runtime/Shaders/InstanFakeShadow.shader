@@ -13,7 +13,8 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
         _ShadowSkewY ("Shadow Skew Y", Float) = 0
         _ShadowAnchorMode ("Shadow Anchor Mode", Range(0,1)) = 0
         _ShadowAnchorPivot ("Shadow Anchor Pivot", Vector) = (0, -0.5, 0, 0)
-        _ShadowDepthBias ("Shadow Depth Bias", Float) = -0.0005
+        _ShadowDepthBias ("Shadow Depth Bias", Float) = 0.0005
+        _ShadowBlurStrength ("Shadow Blur Strength", Range(0,4)) = 0
     }
 
     SubShader {
@@ -40,6 +41,7 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
             sampler2D _MainTex;
             fixed _Cutoff;
             fixed4 _ShadowColor;
+            float4 _MainTex_TexelSize;
             float _ShadowLocalOffsetX;
             float _ShadowLocalOffsetY;
             float _ShadowOffsetX;
@@ -51,6 +53,7 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
             float _ShadowAnchorMode;
             float4 _ShadowAnchorPivot;
             float _ShadowDepthBias;
+            float _ShadowBlurStrength;
 
             StructuredBuffer<float4> translationAndRotationBuffer;
             StructuredBuffer<float2> scaleBuffer;
@@ -62,7 +65,38 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
             struct v2f {
                 float4 pos : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float2 frameMin : TEXCOORD1;
+                float2 frameMax : TEXCOORD2;
             };
+
+            fixed sampleShadowAlpha(float2 uv, float2 frameMin, float2 frameMax) {
+                return tex2D(_MainTex, clamp(uv, frameMin, frameMax)).a;
+            }
+
+            fixed sampleBlurredShadowAlpha(float2 uv, float2 frameMin, float2 frameMax) {
+                float blurRadius = max(_ShadowBlurStrength, 0.0);
+                if (blurRadius <= 0.0001) {
+                    return sampleShadowAlpha(uv, frameMin, frameMax);
+                }
+
+                float2 blurStep = _MainTex_TexelSize.xy * blurRadius;
+
+                fixed center = sampleShadowAlpha(uv, frameMin, frameMax) * 4.0;
+                fixed axial =
+                    sampleShadowAlpha(uv + float2( blurStep.x, 0), frameMin, frameMax) +
+                    sampleShadowAlpha(uv + float2(-blurStep.x, 0), frameMin, frameMax) +
+                    sampleShadowAlpha(uv + float2(0,  blurStep.y), frameMin, frameMax) +
+                    sampleShadowAlpha(uv + float2(0, -blurStep.y), frameMin, frameMax);
+                fixed diagonal =
+                    sampleShadowAlpha(uv + float2( blurStep.x,  blurStep.y), frameMin, frameMax) +
+                    sampleShadowAlpha(uv + float2(-blurStep.x,  blurStep.y), frameMin, frameMax) +
+                    sampleShadowAlpha(uv + float2( blurStep.x, -blurStep.y), frameMin, frameMax) +
+                    sampleShadowAlpha(uv + float2(-blurStep.x, -blurStep.y), frameMin, frameMax);
+
+                fixed blurred = (center + axial * 2.0 + diagonal) / 16.0;
+                fixed blend = saturate(_ShadowBlurStrength / 4.0);
+                return lerp(sampleShadowAlpha(uv, frameMin, frameMax), blurred, blend);
+            }
 
             float4x4 rotationZMatrix(float zRotRadians) {
                 float c = cos(zRotRadians);
@@ -128,10 +162,12 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
                 o.pos.z = depthClipPos.z;
 
                 o.uv = v.texcoord * uv.xy + uv.zw;
+                o.frameMin = uv.zw;
+                o.frameMax = uv.zw + uv.xy;
 
                 float2 flip = flipBuffer[instanceID];
-                float2 frameMin = uv.zw;
-                float2 frameMax = uv.zw + uv.xy;
+                float2 frameMin = o.frameMin;
+                float2 frameMax = o.frameMax;
                 if (flip.x > 0.5) o.uv.x = frameMax.x - (o.uv.x - frameMin.x);
                 if (flip.y > 0.5) o.uv.y = frameMax.y - (o.uv.y - frameMin.y);
 
@@ -139,11 +175,14 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
             }
 
             fixed4 frag(v2f i) : SV_Target {
-                fixed sourceAlpha = tex2D(_MainTex, i.uv).a;
-                clip(sourceAlpha - _Cutoff);
+                fixed sourceAlpha = sampleShadowAlpha(i.uv, i.frameMin, i.frameMax);
+                fixed shadowAlpha = sampleBlurredShadowAlpha(i.uv, i.frameMin, i.frameMax);
+
+                fixed alphaThreshold = lerp(_Cutoff, 0.001, saturate(_ShadowBlurStrength / 4.0));
+                clip(shadowAlpha - alphaThreshold);
 
                 fixed4 shadow = _ShadowColor;
-                shadow.a *= sourceAlpha;
+                shadow.a *= max(sourceAlpha, shadowAlpha);
                 return shadow;
             }
             ENDCG
