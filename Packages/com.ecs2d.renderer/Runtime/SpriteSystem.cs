@@ -346,6 +346,7 @@ namespace ECS2D.Rendering
                         name = $"{definition.name} Shadow (Runtime)"
                     };
                     ShadowMaterial.enableInstancing = true;
+                    ShadowMaterial.renderQueue = Material.renderQueue - 1;
                 }
 
                 if (definition.Texture != null)

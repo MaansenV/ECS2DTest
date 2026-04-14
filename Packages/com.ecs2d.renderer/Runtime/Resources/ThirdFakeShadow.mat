@@ -31,8 +31,10 @@ Material:
     m_Floats:
     - _Cutoff: 0.5
     - _ShadowDepthBias: -0.0005
+    - _ShadowLocalOffsetX: 0
+    - _ShadowLocalOffsetY: -0.18
     - _ShadowOffsetX: 0.12
-    - _ShadowOffsetY: -0.08
+    - _ShadowOffsetY: -0.02
     - _ShadowScaleX: 1.1
     - _ShadowScaleY: 0.35
     - _ShadowSkewX: 0.35

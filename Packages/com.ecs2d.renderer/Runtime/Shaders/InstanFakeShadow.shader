@@ -3,8 +3,10 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
         _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
         _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.4)
+        _ShadowLocalOffsetX ("Shadow Local Offset X", Float) = 0
+        _ShadowLocalOffsetY ("Shadow Local Offset Y", Float) = -0.18
         _ShadowOffsetX ("Shadow Offset X", Float) = 0.12
-        _ShadowOffsetY ("Shadow Offset Y", Float) = -0.08
+        _ShadowOffsetY ("Shadow Offset Y", Float) = -0.02
         _ShadowScaleX ("Shadow Scale X", Float) = 1.1
         _ShadowScaleY ("Shadow Scale Y", Float) = 0.35
         _ShadowSkewX ("Shadow Skew X", Float) = 0.35
@@ -14,13 +16,14 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
 
     SubShader {
         Tags {
-            "Queue"="Transparent"
+            "Queue"="AlphaTest-1"
             "IgnoreProjector"="True"
-            "RenderType"="Transparent"
+            "RenderType"="TransparentCutout"
         }
         Cull Back
         Lighting Off
         ZWrite Off
+        ZTest LEqual
         Blend SrcAlpha OneMinusSrcAlpha
 
         Pass {
@@ -35,6 +38,8 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
             sampler2D _MainTex;
             fixed _Cutoff;
             fixed4 _ShadowColor;
+            float _ShadowLocalOffsetX;
+            float _ShadowLocalOffsetY;
             float _ShadowOffsetX;
             float _ShadowOffsetY;
             float _ShadowScaleX;
@@ -84,6 +89,8 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
                 float skewedY = localVertex.y + localVertex.x * _ShadowSkewY;
                 localVertex.x = skewedX;
                 localVertex.y = skewedY;
+                localVertex.x += _ShadowLocalOffsetX;
+                localVertex.y += _ShadowLocalOffsetY;
 
                 float4 rotatedVertex = mul(localVertex, rotationZMatrix(translationAndRot.w));
                 float3 worldPosition = translationAndRot.xyz + rotatedVertex.xyz;
