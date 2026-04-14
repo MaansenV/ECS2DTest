@@ -5,8 +5,8 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
         _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.4)
         _ShadowLocalOffsetX ("Shadow Local Offset X", Float) = 0
         _ShadowLocalOffsetY ("Shadow Local Offset Y", Float) = -0.18
-        _ShadowOffsetX ("Shadow Offset X", Float) = 0.12
-        _ShadowOffsetY ("Shadow Offset Y", Float) = -0.02
+        _ShadowOffsetX ("Shadow Offset X", Float) = 0
+        _ShadowOffsetY ("Shadow Offset Y", Float) = 0
         _ShadowScaleX ("Shadow Scale X", Float) = 1.1
         _ShadowScaleY ("Shadow Scale Y", Float) = 0.35
         _ShadowSkewX ("Shadow Skew X", Float) = 0.35
@@ -116,8 +116,11 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
 
                 float4 rotatedVertex = mul(localVertex, rotationZMatrix(translationAndRot.w));
                 float3 worldPosition = translationAndRot.xyz + rotatedVertex.xyz;
-                worldPosition.x += _ShadowOffsetX;
-                worldPosition.y += _ShadowOffsetY;
+
+                if (_ShadowAnchorMode <= 0.5) {
+                    worldPosition.x += _ShadowOffsetX;
+                    worldPosition.y += _ShadowOffsetY;
+                }
 
                 v2f o;
                 o.pos = UnityObjectToClipPos(float4(worldPosition, 1.0f));

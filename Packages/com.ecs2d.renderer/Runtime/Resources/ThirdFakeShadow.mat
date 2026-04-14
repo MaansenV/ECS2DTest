@@ -33,9 +33,9 @@ Material:
     - _ShadowAnchorMode: 1
     - _ShadowDepthBias: -0.0005
     - _ShadowLocalOffsetX: 0
-    - _ShadowLocalOffsetY: 0
+    - _ShadowLocalOffsetY: 0.1
     - _ShadowOffsetX: 0
-    - _ShadowOffsetY: 0.1
+    - _ShadowOffsetY: 0
     - _ShadowScaleX: 1.1
     - _ShadowScaleY: 0.35
     - _ShadowSkewX: 0.35

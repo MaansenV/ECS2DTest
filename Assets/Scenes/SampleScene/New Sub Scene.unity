@@ -169,8 +169,8 @@ MonoBehaviour:
   SortingLayer: 0
   SpriteFrameIndex: 0
   BaseScale: 1
-  BaseScaleXY: {x: 0, y: 0}
-  useAdvancedScaleXY: 0
+  BaseScaleXY: {x: 1, y: 1}
+  useAdvancedScaleXY: 1
   Color:
     x: 1
     y: 1
@@ -188,7 +188,82 @@ Transform:
   m_GameObject: {fileID: 55694294}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.21443, y: 0.5803, z: 0}
+  m_LocalPosition: {x: 3.11, y: 0.5803, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1047508683
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1047508686}
+  - component: {fileID: 1047508685}
+  - component: {fileID: 1047508684}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1047508684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1047508683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d6e8f0a1b2c3d4e5f60718293a4b5c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.SpriteAnimationAuthoring
+  AnimationSet: {fileID: 11400000, guid: 8e88ca72d8d5f2042b56b8ada44f695f, type: 2}
+  StartAnimation: idle
+  PlaybackSpeed: 1
+  PlayOnStart: 1
+--- !u!114 &1047508685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1047508683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a10e965eed054fec8cba7fe519c08a42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.SpriteDataAuthoring
+  SpriteSheet: {fileID: 11400000, guid: 520b577d7635d504da5a70280b0b5187, type: 2}
+  SortingLayer: 0
+  SpriteFrameIndex: 0
+  BaseScale: 1
+  BaseScaleXY: {x: 2, y: 2}
+  useAdvancedScaleXY: 1
+  Color:
+    x: 1
+    y: 1
+    z: 1
+    w: 1
+  RotationOffsetDegrees: 0
+  FlipX: 0
+  FlipY: 0
+--- !u!4 &1047508686
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1047508683}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.56, y: 0.69, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -199,3 +274,4 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 55694297}
+  - {fileID: 1047508686}
