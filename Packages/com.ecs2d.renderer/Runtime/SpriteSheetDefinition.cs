@@ -8,6 +8,7 @@ namespace ECS2D.Rendering
     {
         [SerializeField] private int sheetId = 1;
         [SerializeField] private Material baseMaterial;
+        [SerializeField] private Material fakeShadowMaterial;
         [SerializeField] private Texture2D texture;
         [SerializeField] private Bounds worldBounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
         [SerializeField] private int initialCapacity = 256;
@@ -19,6 +20,7 @@ namespace ECS2D.Rendering
 
         public int SheetId => sheetId;
         public Material BaseMaterial => baseMaterial;
+        public Material FakeShadowMaterial => fakeShadowMaterial;
         public Texture2D Texture => texture;
         public Bounds WorldBounds => worldBounds;
         public int InitialCapacity => Mathf.Max(1, initialCapacity);

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sheetId: 2
   baseMaterial: {fileID: 2100000, guid: c9ea5b12982bb0f41a1e6930b1ed81db, type: 2}
+  fakeShadowMaterial: {fileID: 2100000, guid: 6a2105b657e74df694c64ef162ec669d, type: 2}
   texture: {fileID: 2800000, guid: bee4023e78c0c1c46a6915d9b38bff7a, type: 3}
   worldBounds:
     m_Center: {x: 0, y: 0, z: 0}

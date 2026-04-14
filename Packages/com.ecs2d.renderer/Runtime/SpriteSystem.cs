@@ -317,6 +317,7 @@ namespace ECS2D.Rendering
             public readonly Vector4[] Frames;
             public readonly Bounds Bounds;
             public Material Material;
+            public Material ShadowMaterial;
             public readonly int FrameCount;
             private readonly FrameBuffers[] frameBuffers = new FrameBuffers[UploadBufferCount];
             public ComputeBuffer UvBuffer;
@@ -338,9 +339,22 @@ namespace ECS2D.Rendering
                 };
                 Material.enableInstancing = true;
 
+                if (definition.FakeShadowMaterial != null)
+                {
+                    ShadowMaterial = new Material(definition.FakeShadowMaterial)
+                    {
+                        name = $"{definition.name} Shadow (Runtime)"
+                    };
+                    ShadowMaterial.enableInstancing = true;
+                }
+
                 if (definition.Texture != null)
                 {
                     Material.mainTexture = definition.Texture;
+                    if (ShadowMaterial != null)
+                    {
+                        ShadowMaterial.mainTexture = definition.Texture;
+                    }
                 }
 
                 CreateBuffers(math.max(1, definition.InitialCapacity));
@@ -418,6 +432,11 @@ namespace ECS2D.Rendering
                     return false;
                 }
 
+                if (ShadowMaterial != null)
+                {
+                    Graphics.DrawMeshInstancedIndirect(mesh, 0, ShadowMaterial, Bounds, frameBuffers[activeFrameBufferIndex].ArgsBuffer);
+                }
+
                 Graphics.DrawMeshInstancedIndirect(mesh, 0, Material, Bounds, frameBuffers[activeFrameBufferIndex].ArgsBuffer);
                 return true;
             }
@@ -442,6 +461,12 @@ namespace ECS2D.Rendering
                 {
                     SpriteSystem.DestroyUnityObject(Material);
                     Material = null;
+                }
+
+                if (ShadowMaterial != null)
+                {
+                    SpriteSystem.DestroyUnityObject(ShadowMaterial);
+                    ShadowMaterial = null;
                 }
 
                 WriteIndex = 0;
@@ -483,14 +508,25 @@ namespace ECS2D.Rendering
                     return false;
                 }
 
-                Material.SetBuffer(UvBufferId, UvBuffer);
-                Material.SetBuffer(TranslationAndRotationBufferId, buffers.TranslationAndRotationBuffer);
-                Material.SetBuffer(ScaleBufferId, buffers.ScaleBuffer);
-                Material.SetBuffer(ColorsBufferId, buffers.ColorBuffer);
-                Material.SetBuffer(FrameIndexBufferId, buffers.FrameIndexBuffer);
-                Material.SetBuffer(FlipBufferId, buffers.FlipBuffer);
-                Material.SetBuffer(RenderDepthBufferId, buffers.RenderDepthBuffer);
+                BindBuffers(Material, buffers);
+
+                if (ShadowMaterial != null)
+                {
+                    BindBuffers(ShadowMaterial, buffers);
+                }
+
                 return true;
+            }
+
+            private void BindBuffers(Material material, in FrameBuffers buffers)
+            {
+                material.SetBuffer(UvBufferId, UvBuffer);
+                material.SetBuffer(TranslationAndRotationBufferId, buffers.TranslationAndRotationBuffer);
+                material.SetBuffer(ScaleBufferId, buffers.ScaleBuffer);
+                material.SetBuffer(ColorsBufferId, buffers.ColorBuffer);
+                material.SetBuffer(FrameIndexBufferId, buffers.FrameIndexBuffer);
+                material.SetBuffer(FlipBufferId, buffers.FlipBuffer);
+                material.SetBuffer(RenderDepthBufferId, buffers.RenderDepthBuffer);
             }
 
             private static FrameBuffers CreateFrameBuffers(int capacity)

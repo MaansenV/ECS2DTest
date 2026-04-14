@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &228233094
+--- !u!1 &55694294
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 228233096}
-  - component: {fileID: 228233095}
+  - component: {fileID: 55694297}
+  - component: {fileID: 55694296}
+  - component: {fileID: 55694295}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -136,569 +137,58 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &228233095
+--- !u!114 &55694295
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 228233094}
+  m_GameObject: {fileID: 55694294}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27ad51fcaa4bcc642a1d80b3664a525f, type: 3}
+  m_Script: {fileID: 11500000, guid: 4d6e8f0a1b2c3d4e5f60718293a4b5c6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.ParticleEmitterAuthoring
-  SpriteSheet: {fileID: 11400000, guid: 520b577d7635d504da5a70280b0b5187, type: 2}
-  SortingLayer: 0
-  SpriteFrameIndex: 0
-  Enabled: 1
-  BurstCount: 4
-  SpawnRate: 0
-  MaxParticles: 64
-  LifetimeMin: 1
-  LifetimeMax: 6
-  SpeedMin: 1
-  SpeedMax: 0.5
-  SpeedCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  ScaleCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  SpeedCurveMode: 0
-  ScaleCurveMode: 0
-  BaseScale: 1
-  StartColor: {r: 1, g: 1, b: 1, a: 1}
-  EndColor: {r: 0, g: 0, b: 0, a: 0}
-  CircleRadius: 0.5
-  CircleMode: 1
-  DirectionMode: 2
-  FixedDirection: {x: 1, y: 0}
-  StartRotationMinDegrees: 0
-  StartRotationMaxDegrees: 180
-  RotationSpeedMinDegrees: 0
-  RotationSpeedMaxDegrees: 0
-  DestroyEmitterAfterSeconds: 6
---- !u!4 &228233096
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 228233094}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1401369152
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1401369154}
-  - component: {fileID: 1401369153}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1401369153
+  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.SpriteAnimationAuthoring
+  AnimationSet: {fileID: 11400000, guid: 8e88ca72d8d5f2042b56b8ada44f695f, type: 2}
+  StartAnimation: idle
+  PlaybackSpeed: 1
+  PlayOnStart: 1
+--- !u!114 &55694296
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1401369152}
+  m_GameObject: {fileID: 55694294}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27ad51fcaa4bcc642a1d80b3664a525f, type: 3}
+  m_Script: {fileID: 11500000, guid: a10e965eed054fec8cba7fe519c08a42, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.ParticleEmitterAuthoring
-  SpriteSheet: {fileID: 11400000, guid: 520b577d7635d504da5a70280b0b5187, type: 2}
+  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.SpriteDataAuthoring
+  SpriteSheet: {fileID: 11400000, guid: 483e9361110734a48b2bc7cf45a2567d, type: 2}
   SortingLayer: 0
   SpriteFrameIndex: 0
-  Enabled: 1
-  BurstCount: 4
-  SpawnRate: 0
-  MaxParticles: 64
-  LifetimeMin: 1
-  LifetimeMax: 6
-  SpeedMin: 1
-  SpeedMax: 0.5
-  SpeedCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  ScaleCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  SpeedCurveMode: 0
-  ScaleCurveMode: 0
   BaseScale: 1
-  StartColor: {r: 1, g: 1, b: 1, a: 1}
-  EndColor: {r: 0, g: 0, b: 0, a: 0}
-  CircleRadius: 0.5
-  CircleMode: 1
-  DirectionMode: 2
-  FixedDirection: {x: 1, y: 0}
-  StartRotationMinDegrees: 0
-  StartRotationMaxDegrees: 180
-  RotationSpeedMinDegrees: 0
-  RotationSpeedMaxDegrees: 0
-  DestroyEmitterAfterSeconds: 6
---- !u!4 &1401369154
+  BaseScaleXY: {x: 0, y: 0}
+  useAdvancedScaleXY: 0
+  Color:
+    x: 1
+    y: 1
+    z: 1
+    w: 1
+  RotationOffsetDegrees: 0
+  FlipX: 0
+  FlipY: 0
+--- !u!4 &55694297
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1401369152}
+  m_GameObject: {fileID: 55694294}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1474303853
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1474303855}
-  - component: {fileID: 1474303854}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1474303854
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1474303853}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27ad51fcaa4bcc642a1d80b3664a525f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.ParticleEmitterAuthoring
-  SpriteSheet: {fileID: 11400000, guid: 520b577d7635d504da5a70280b0b5187, type: 2}
-  SortingLayer: 0
-  SpriteFrameIndex: 0
-  Enabled: 1
-  BurstCount: 4
-  SpawnRate: 0
-  MaxParticles: 64
-  LifetimeMin: 1
-  LifetimeMax: 6
-  SpeedMin: 1
-  SpeedMax: 0.5
-  SpeedCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  ScaleCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  SpeedCurveMode: 0
-  ScaleCurveMode: 0
-  BaseScale: 1
-  StartColor: {r: 1, g: 1, b: 1, a: 1}
-  EndColor: {r: 0, g: 0, b: 0, a: 0}
-  CircleRadius: 0.5
-  CircleMode: 1
-  DirectionMode: 2
-  FixedDirection: {x: 1, y: 0}
-  StartRotationMinDegrees: 0
-  StartRotationMaxDegrees: 180
-  RotationSpeedMinDegrees: 0
-  RotationSpeedMaxDegrees: 0
-  DestroyEmitterAfterSeconds: 6
---- !u!4 &1474303855
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1474303853}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1501442409
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1501442411}
-  - component: {fileID: 1501442410}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1501442410
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1501442409}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27ad51fcaa4bcc642a1d80b3664a525f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.ParticleEmitterAuthoring
-  SpriteSheet: {fileID: 11400000, guid: 520b577d7635d504da5a70280b0b5187, type: 2}
-  SortingLayer: 0
-  SpriteFrameIndex: 0
-  Enabled: 1
-  BurstCount: 4
-  SpawnRate: 0
-  MaxParticles: 64
-  LifetimeMin: 1
-  LifetimeMax: 6
-  SpeedMin: 1
-  SpeedMax: 0.5
-  SpeedCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  ScaleCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  SpeedCurveMode: 0
-  ScaleCurveMode: 0
-  BaseScale: 1
-  StartColor: {r: 1, g: 1, b: 1, a: 1}
-  EndColor: {r: 0, g: 0, b: 0, a: 0}
-  CircleRadius: 0.5
-  CircleMode: 1
-  DirectionMode: 2
-  FixedDirection: {x: 1, y: 0}
-  StartRotationMinDegrees: 0
-  StartRotationMaxDegrees: 180
-  RotationSpeedMinDegrees: 0
-  RotationSpeedMaxDegrees: 0
-  DestroyEmitterAfterSeconds: 6
---- !u!4 &1501442411
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1501442409}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1519869996
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1519869998}
-  - component: {fileID: 1519869997}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1519869997
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1519869996}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27ad51fcaa4bcc642a1d80b3664a525f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ECS2D.Rendering::ECS2D.Rendering.ParticleEmitterAuthoring
-  SpriteSheet: {fileID: 11400000, guid: 520b577d7635d504da5a70280b0b5187, type: 2}
-  SortingLayer: 0
-  SpriteFrameIndex: 0
-  Enabled: 1
-  BurstCount: 4
-  SpawnRate: 0
-  MaxParticles: 64
-  LifetimeMin: 1
-  LifetimeMax: 6
-  SpeedMin: 1
-  SpeedMax: 0.5
-  SpeedCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  ScaleCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  SpeedCurveMode: 0
-  ScaleCurveMode: 0
-  BaseScale: 1
-  StartColor: {r: 1, g: 1, b: 1, a: 1}
-  EndColor: {r: 0, g: 0, b: 0, a: 0}
-  CircleRadius: 0.5
-  CircleMode: 1
-  DirectionMode: 2
-  FixedDirection: {x: 1, y: 0}
-  StartRotationMinDegrees: 0
-  StartRotationMaxDegrees: 180
-  RotationSpeedMinDegrees: 0
-  RotationSpeedMaxDegrees: 0
-  DestroyEmitterAfterSeconds: 6
---- !u!4 &1519869998
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1519869996}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 3.21443, y: 0.5803, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -708,8 +198,4 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1519869998}
-  - {fileID: 1401369154}
-  - {fileID: 228233096}
-  - {fileID: 1501442411}
-  - {fileID: 1474303855}
+  - {fileID: 55694297}
