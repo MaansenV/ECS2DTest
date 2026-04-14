@@ -16,7 +16,7 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
 
     SubShader {
         Tags {
-            "Queue"="AlphaTest-1"
+            "Queue"="AlphaTest"
             "IgnoreProjector"="True"
             "RenderType"="TransparentCutout"
         }
