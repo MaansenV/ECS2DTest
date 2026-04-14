@@ -43,13 +43,12 @@ namespace ECS2D.Rendering
         {
             private static float2 ResolveBaseScaleXY(SpriteDataAuthoring authoring)
             {
-                Vector2 explicitScaleXY = authoring.BaseScaleXY;
-                bool hasExplicitXY = explicitScaleXY.x > 0f || explicitScaleXY.y > 0f;
-                if (!hasExplicitXY)
+                if (!authoring.useAdvancedScaleXY)
                 {
                     return new float2(authoring.BaseScale, authoring.BaseScale);
                 }
 
+                Vector2 explicitScaleXY = authoring.BaseScaleXY;
                 return math.max(float2.zero, new float2(explicitScaleXY.x, explicitScaleXY.y));
             }
 
@@ -162,6 +161,7 @@ namespace ECS2D.Rendering
                     TranslationAndRotation = new float4(position.x, position.y, position.z, rotationRadians),
                     BaseScale = authoring.BaseScale,
                     BaseScaleXY = baseScaleXY,
+                    UseAdvancedScaleXY = (byte)(authoring.useAdvancedScaleXY ? 1 : 0),
                     RotationOffsetRadians = rotationOffsetRadians,
                     Scale = scaleXY.x,
                     ScaleXY = scaleXY,

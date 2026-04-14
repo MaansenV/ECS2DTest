@@ -18,9 +18,8 @@ namespace ECS2D.Rendering
         {
             private static float2 ResolveBaseScaleXY(in SpriteData spriteData)
             {
-                bool hasExplicitXY = spriteData.BaseScaleXY.x > 0f || spriteData.BaseScaleXY.y > 0f;
-                return hasExplicitXY
-                    ? spriteData.BaseScaleXY
+                return spriteData.UseAdvancedScaleXY != 0
+                    ? math.max(float2.zero, spriteData.BaseScaleXY)
                     : new float2(spriteData.BaseScale, spriteData.BaseScale);
             }
 

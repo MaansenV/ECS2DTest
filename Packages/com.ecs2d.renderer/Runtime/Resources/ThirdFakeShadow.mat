@@ -30,16 +30,18 @@ Material:
     m_Ints: []
     m_Floats:
     - _Cutoff: 0.5
+    - _ShadowAnchorMode: 1
     - _ShadowDepthBias: -0.0005
     - _ShadowLocalOffsetX: 0
-    - _ShadowLocalOffsetY: -0.18
-    - _ShadowOffsetX: 0.12
-    - _ShadowOffsetY: -0.02
+    - _ShadowLocalOffsetY: 0
+    - _ShadowOffsetX: 0
+    - _ShadowOffsetY: 0.1
     - _ShadowScaleX: 1.1
     - _ShadowScaleY: 0.35
     - _ShadowSkewX: 0.35
     - _ShadowSkewY: 0
     m_Colors:
+    - _ShadowAnchorPivot: {r: 0, g: -0.5, b: 0, a: 0}
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.4}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -11,6 +11,8 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
         _ShadowScaleY ("Shadow Scale Y", Float) = 0.35
         _ShadowSkewX ("Shadow Skew X", Float) = 0.35
         _ShadowSkewY ("Shadow Skew Y", Float) = 0
+        _ShadowAnchorMode ("Shadow Anchor Mode", Range(0,1)) = 0
+        _ShadowAnchorPivot ("Shadow Anchor Pivot", Vector) = (0, -0.5, 0, 0)
         _ShadowDepthBias ("Shadow Depth Bias", Float) = -0.0005
     }
 
@@ -46,6 +48,8 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
             float _ShadowScaleY;
             float _ShadowSkewX;
             float _ShadowSkewY;
+            float _ShadowAnchorMode;
+            float4 _ShadowAnchorPivot;
             float _ShadowDepthBias;
 
             StructuredBuffer<float4> translationAndRotationBuffer;
@@ -78,19 +82,37 @@ Shader "Instanced/SpriteRendererIndexedUvFakeShadow" {
                 float4 uv = uvBuffer[frameIndex];
 
                 float2 scale = scaleBuffer[instanceID];
-                float4 localVertex = v.vertex - float4(0.5, 0.5, 0, 0);
-                localVertex.x *= scale.x;
-                localVertex.y *= scale.y;
+                float2 unscaledLocalVertexXY = v.vertex.xy - float2(0.5, 0.5);
+                float2 localVertexXY = unscaledLocalVertexXY * scale;
 
-                localVertex.x *= _ShadowScaleX;
-                localVertex.y *= _ShadowScaleY;
+                if (_ShadowAnchorMode > 0.5) {
+                    float2 anchorPivot = _ShadowAnchorPivot.xy;
+                    float2 anchoredLocal = unscaledLocalVertexXY - anchorPivot;
 
-                float skewedX = localVertex.x + localVertex.y * _ShadowSkewX;
-                float skewedY = localVertex.y + localVertex.x * _ShadowSkewY;
-                localVertex.x = skewedX;
-                localVertex.y = skewedY;
-                localVertex.x += _ShadowLocalOffsetX;
-                localVertex.y += _ShadowLocalOffsetY;
+                    anchoredLocal.x *= _ShadowScaleX;
+                    anchoredLocal.y *= _ShadowScaleY;
+
+                    float anchoredSkewedX = anchoredLocal.x + anchoredLocal.y * _ShadowSkewX;
+                    float anchoredSkewedY = anchoredLocal.y + anchoredLocal.x * _ShadowSkewY;
+                    anchoredLocal.x = anchoredSkewedX;
+                    anchoredLocal.y = anchoredSkewedY;
+
+                    float2 localOffset = float2(_ShadowLocalOffsetX, _ShadowLocalOffsetY);
+                    float2 localShadowUnscaledXY = anchorPivot + anchoredLocal + localOffset;
+                    localVertexXY = localShadowUnscaledXY * scale;
+                } else {
+                    localVertexXY.x *= _ShadowScaleX;
+                    localVertexXY.y *= _ShadowScaleY;
+
+                    float skewedX = localVertexXY.x + localVertexXY.y * _ShadowSkewX;
+                    float skewedY = localVertexXY.y + localVertexXY.x * _ShadowSkewY;
+                    localVertexXY.x = skewedX;
+                    localVertexXY.y = skewedY;
+                    localVertexXY.x += _ShadowLocalOffsetX;
+                    localVertexXY.y += _ShadowLocalOffsetY;
+                }
+
+                float4 localVertex = float4(localVertexXY, 0, 0);
 
                 float4 rotatedVertex = mul(localVertex, rotationZMatrix(translationAndRot.w));
                 float3 worldPosition = translationAndRot.xyz + rotatedVertex.xyz;

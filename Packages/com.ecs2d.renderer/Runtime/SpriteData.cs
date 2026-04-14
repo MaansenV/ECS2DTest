@@ -8,6 +8,7 @@ namespace ECS2D.Rendering
         public float4 TranslationAndRotation;
         public float BaseScale;
         public float2 BaseScaleXY;
+        public byte UseAdvancedScaleXY;
         public float RotationOffsetRadians;
         public float Scale;
         public float2 ScaleXY;
