@@ -159,16 +159,18 @@ namespace ECS2D.Rendering
                 {
                     SpawnAccumulator = 0f,
                     RandomState = (uint)entity.Index + 1u,
-                    NextPoolIndex = 0,
                     BurstConsumed = 0
                 });
 
                 DynamicBuffer<ParticleEmitterParticleElement> buffer = AddBuffer<ParticleEmitterParticleElement>(entity);
+                DynamicBuffer<ParticleEmitterAvailableParticleElement> availableBuffer = AddBuffer<ParticleEmitterAvailableParticleElement>(entity);
+                AddBuffer<ParticleEmitterRecycleParticleElement>(entity);
 
                 for (int i = 0; i < maxParticles; i++)
                 {
                     Entity particleEntity = CreateAdditionalEntity(TransformUsageFlags.ManualOverride, entityName: $"{authoring.name}-Particle-{i}");
                     buffer.Add(new ParticleEmitterParticleElement { Value = particleEntity });
+                    availableBuffer.Add(new ParticleEmitterAvailableParticleElement { Value = particleEntity });
 
                     AddComponent(particleEntity, new ParticleEmitterOwner
                     {

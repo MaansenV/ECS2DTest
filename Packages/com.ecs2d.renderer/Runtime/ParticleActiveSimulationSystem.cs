@@ -19,20 +19,17 @@ namespace ECS2D.Rendering
         public void OnUpdate(ref SystemState state)
         {
             float deltaTime = SystemAPI.Time.DeltaTime;
+            var recycleLookup = SystemAPI.GetBufferLookup<ParticleEmitterRecycleParticleElement>();
+            var cullStateLookup = SystemAPI.GetComponentLookup<SpriteCullState>();
 
-            foreach (var (runtime, spriteData, localToWorld, active, cullState) in SystemAPI.Query<
+            foreach (var (runtime, spriteData, localToWorld, active, owner, entity) in SystemAPI.Query<
                 RefRW<ParticleRuntime>,
                 RefRW<SpriteData>,
                 RefRW<LocalToWorld>,
                 EnabledRefRW<ParticleActive>,
-                EnabledRefRW<SpriteCullState>>()
-                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
+                RefRO<ParticleEmitterOwner>>()
+                .WithEntityAccess())
             {
-                if (!active.ValueRO)
-                {
-                    continue;
-                }
-
                 ParticleRuntime particleRuntime = runtime.ValueRW;
                 SpriteData renderData = spriteData.ValueRW;
                 LocalToWorld currentLocalToWorld = localToWorld.ValueRW;
@@ -49,7 +46,17 @@ namespace ECS2D.Rendering
                     runtime.ValueRW = particleRuntime;
                     spriteData.ValueRW = renderData;
                     active.ValueRW = false;
-                    cullState.ValueRW = false;
+                    cullStateLookup.SetComponentEnabled(entity, false);
+
+                    Entity ownerEntity = owner.ValueRO.Value;
+                    if (state.EntityManager.Exists(ownerEntity) && recycleLookup.HasBuffer(ownerEntity))
+                    {
+                        recycleLookup[ownerEntity].Add(new ParticleEmitterRecycleParticleElement
+                        {
+                            Value = entity
+                        });
+                    }
+
                     continue;
                 }
 

@@ -33,9 +33,11 @@ namespace ECS2D.Rendering.Tests
         {
             using var world = new World("ParticleEmissionSystemTests");
             var entityManager = world.EntityManager;
+            var recycleSystem = world.CreateSystem<ParticleRecycleSystem>();
             var emissionSystem = world.CreateSystem<ParticleEmissionSystem>();
             Entity emitter = CreateEmitterWithPool(world, maxParticles: 4, burstCount: 3, spawnRate: 0f);
 
+            recycleSystem.Update(world.Unmanaged);
             emissionSystem.Update(world.Unmanaged);
             entityManager.CompleteAllTrackedJobs();
 
@@ -64,9 +66,11 @@ namespace ECS2D.Rendering.Tests
         {
             using var world = new World("ParticleCurveBlobSpawnTests");
             var entityManager = world.EntityManager;
+            var recycleSystem = world.CreateSystem<ParticleRecycleSystem>();
             var emissionSystem = world.CreateSystem<ParticleEmissionSystem>();
             Entity emitter = CreateEmitterWithPool(world, maxParticles: 1, burstCount: 1, spawnRate: 0f);
 
+            recycleSystem.Update(world.Unmanaged);
             emissionSystem.Update(world.Unmanaged);
             entityManager.CompleteAllTrackedJobs();
 
@@ -171,6 +175,152 @@ namespace ECS2D.Rendering.Tests
             activeSystem.Update(world.Unmanaged);
             entityManager.CompleteAllTrackedJobs();
             Assert.That(entityManager.GetComponentData<ParticleRuntime>(particle).CurrentSpeed, Is.EqualTo(10f).Within(0.02f));
+        }
+
+        [Test]
+        public void ParticleActiveSimulationSystem_DoesNotAdvanceInactiveParticles()
+        {
+            using var world = new World("ParticleInactiveSkipTests");
+            var entityManager = world.EntityManager;
+            var activeSystem = world.CreateSystem<ParticleActiveSimulationSystem>();
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 1, burstCount: 0, spawnRate: 0f);
+            Entity particle = entityManager.GetBuffer<ParticleEmitterParticleElement>(emitter)[0].Value;
+
+            entityManager.SetComponentData(particle, new ParticleRuntime
+            {
+                Position = float3.zero,
+                Velocity = new float2(3f, 0f),
+                Age = 0.25f,
+                Lifetime = 1f,
+                SpeedCurve = CreateTrackedFlatCurveBlob(1f),
+                ScaleCurve = CreateTrackedFlatCurveBlob(1f),
+                RotationRadians = 0f,
+                RotationSpeedRadians = 0f,
+                InitialSpeed = 3f,
+                CurrentSpeed = 3f,
+                BaseScale = 1f,
+                StartColor = new float4(1f),
+                EndColor = new float4(1f),
+                LifecycleState = (byte)ParticleLifecycleState.Inactive
+            });
+            entityManager.SetComponentEnabled<ParticleActive>(particle, false);
+            entityManager.SetComponentEnabled<SpriteCullState>(particle, false);
+
+            world.SetTime(new TimeData(0.5, 0.25f));
+            activeSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            ParticleRuntime runtime = entityManager.GetComponentData<ParticleRuntime>(particle);
+            Assert.That(runtime.Age, Is.EqualTo(0.25f).Within(0.0001f));
+            Assert.That(runtime.Position, Is.EqualTo(float3.zero));
+        }
+
+        [Test]
+        public void ParticleActiveSimulationSystem_AdvancesActiveParticlesEvenWhenCulled()
+        {
+            using var world = new World("ParticleCulledActiveTests");
+            var entityManager = world.EntityManager;
+            var activeSystem = world.CreateSystem<ParticleActiveSimulationSystem>();
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 1, burstCount: 0, spawnRate: 0f);
+            Entity particle = entityManager.GetBuffer<ParticleEmitterParticleElement>(emitter)[0].Value;
+
+            entityManager.SetComponentData(particle, new ParticleRuntime
+            {
+                Position = float3.zero,
+                Velocity = new float2(2f, 0f),
+                Age = 0f,
+                Lifetime = 1f,
+                SpeedCurve = CreateTrackedFlatCurveBlob(1f),
+                ScaleCurve = CreateTrackedFlatCurveBlob(1f),
+                RotationRadians = 0f,
+                RotationSpeedRadians = 0f,
+                InitialSpeed = 2f,
+                CurrentSpeed = 2f,
+                BaseScale = 1f,
+                StartColor = new float4(1f),
+                EndColor = new float4(1f),
+                LifecycleState = (byte)ParticleLifecycleState.Active
+            });
+            entityManager.SetComponentEnabled<ParticleActive>(particle, true);
+            entityManager.SetComponentEnabled<SpriteCullState>(particle, false);
+
+            world.SetTime(new TimeData(0.25, 0.25f));
+            activeSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            ParticleRuntime runtime = entityManager.GetComponentData<ParticleRuntime>(particle);
+            Assert.That(runtime.Age, Is.EqualTo(0.25f).Within(0.0001f));
+            Assert.That(runtime.Position.x, Is.EqualTo(0.5f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ParticleRecycleSystem_MovesRecycleRequestsBackToAvailablePool()
+        {
+            using var world = new World("ParticleRecycleSystemTests");
+            var entityManager = world.EntityManager;
+            var recycleSystem = world.CreateSystem<ParticleRecycleSystem>();
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 2, burstCount: 0, spawnRate: 0f);
+            DynamicBuffer<ParticleEmitterAvailableParticleElement> available = entityManager.GetBuffer<ParticleEmitterAvailableParticleElement>(emitter);
+            DynamicBuffer<ParticleEmitterRecycleParticleElement> recycle = entityManager.GetBuffer<ParticleEmitterRecycleParticleElement>(emitter);
+
+            Entity recycledParticle = available[available.Length - 1].Value;
+            available.RemoveAt(available.Length - 1);
+            recycle.Add(new ParticleEmitterRecycleParticleElement { Value = recycledParticle });
+
+            recycleSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Assert.AreEqual(2, available.Length);
+            Assert.AreEqual(0, recycle.Length);
+            Assert.Contains(recycledParticle, new[] { available[0].Value, available[1].Value });
+        }
+
+        [Test]
+        public void ParticleSystems_RecycleExpiredParticle_ForNextEmission()
+        {
+            using var world = new World("ParticleRecycleReuseTests");
+            var entityManager = world.EntityManager;
+            var recycleSystem = world.CreateSystem<ParticleRecycleSystem>();
+            var emissionSystem = world.CreateSystem<ParticleEmissionSystem>();
+            var activeSystem = world.CreateSystem<ParticleActiveSimulationSystem>();
+            Entity emitter = CreateEmitterWithPool(world, maxParticles: 1, burstCount: 1, spawnRate: 0f);
+
+            recycleSystem.Update(world.Unmanaged);
+            emissionSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Entity particle = entityManager.GetBuffer<ParticleEmitterParticleElement>(emitter)[0].Value;
+            ParticleRuntime spawnedRuntime = entityManager.GetComponentData<ParticleRuntime>(particle);
+            spawnedRuntime.Age = spawnedRuntime.Lifetime;
+            entityManager.SetComponentData(particle, spawnedRuntime);
+
+            world.SetTime(new TimeData(1d, 0.1f));
+            activeSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Assert.IsFalse(entityManager.IsComponentEnabled<ParticleActive>(particle));
+            Assert.AreEqual((byte)ParticleLifecycleState.Inactive, entityManager.GetComponentData<ParticleRuntime>(particle).LifecycleState);
+            Assert.AreEqual(1, entityManager.GetBuffer<ParticleEmitterRecycleParticleElement>(emitter).Length);
+
+            ParticleEmitter emitterData = entityManager.GetComponentData<ParticleEmitter>(emitter);
+            emitterData.EmitBurstOnStart = 0;
+            emitterData.BurstCount = 0;
+            emitterData.SpawnRate = 1f;
+            entityManager.SetComponentData(emitter, emitterData);
+
+            ParticleEmitterRuntimeState runtimeState = entityManager.GetComponentData<ParticleEmitterRuntimeState>(emitter);
+            runtimeState.SpawnAccumulator = 1f;
+            entityManager.SetComponentData(emitter, runtimeState);
+
+            recycleSystem.Update(world.Unmanaged);
+            emissionSystem.Update(world.Unmanaged);
+            entityManager.CompleteAllTrackedJobs();
+
+            Assert.IsTrue(entityManager.IsComponentEnabled<ParticleActive>(particle));
+            ParticleRuntime reusedRuntime = entityManager.GetComponentData<ParticleRuntime>(particle);
+            Assert.AreEqual((byte)ParticleLifecycleState.Active, reusedRuntime.LifecycleState);
+            Assert.AreEqual(0, entityManager.GetBuffer<ParticleEmitterRecycleParticleElement>(emitter).Length);
+            Assert.AreEqual(0, entityManager.GetBuffer<ParticleEmitterAvailableParticleElement>(emitter).Length);
         }
 
         [Test]
@@ -326,15 +476,20 @@ namespace ECS2D.Rendering.Tests
             });
 
             entityManager.AddBuffer<ParticleEmitterParticleElement>(emitter);
+            entityManager.AddBuffer<ParticleEmitterAvailableParticleElement>(emitter);
+            entityManager.AddBuffer<ParticleEmitterRecycleParticleElement>(emitter);
             for (int i = 0; i < maxParticles; i++)
             {
                 Entity particle = CreateParticle(world, activeEnabled: false);
+                entityManager.SetComponentData(particle, new ParticleEmitterOwner { Value = emitter });
                 SpriteData spriteData = entityManager.GetComponentData<SpriteData>(particle);
                 spriteData.SpriteSheetId = 7;
                 spriteData.SortingLayer = 0;
                 entityManager.SetComponentData(particle, spriteData);
                 DynamicBuffer<ParticleEmitterParticleElement> pool = entityManager.GetBuffer<ParticleEmitterParticleElement>(emitter);
                 pool.Add(new ParticleEmitterParticleElement { Value = particle });
+                DynamicBuffer<ParticleEmitterAvailableParticleElement> available = entityManager.GetBuffer<ParticleEmitterAvailableParticleElement>(emitter);
+                available.Add(new ParticleEmitterAvailableParticleElement { Value = particle });
             }
 
             return emitter;
@@ -348,6 +503,7 @@ namespace ECS2D.Rendering.Tests
             Entity particle = entityManager.CreateEntity(
                 typeof(ParticleRuntime),
                 typeof(ParticleActive),
+                typeof(ParticleEmitterOwner),
                 typeof(LocalToWorld),
                 typeof(SpriteData),
                 typeof(SpriteCullState),
@@ -365,6 +521,10 @@ namespace ECS2D.Rendering.Tests
                 StartColor = new float4(1f),
                 EndColor = new float4(1f, 1f, 1f, 0f),
                 LifecycleState = (byte)ParticleLifecycleState.Inactive
+            });
+            entityManager.SetComponentData(particle, new ParticleEmitterOwner
+            {
+                Value = Entity.Null
             });
             entityManager.SetComponentData(particle, new SpriteData
             {

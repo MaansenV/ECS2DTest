@@ -36,9 +36,9 @@ namespace ECS2D.Rendering
                     continue;
                 }
 
-                for (int i = 0; i < particleBuffer.Length; i++)
+                if (particleBuffer.Length > 0)
                 {
-                    ecb.DestroyEntity(particleBuffer[i].Value);
+                    ecb.DestroyEntity(particleBuffer.Reinterpret<Entity>().AsNativeArray());
                 }
 
                 ecb.DestroyEntity(entity);

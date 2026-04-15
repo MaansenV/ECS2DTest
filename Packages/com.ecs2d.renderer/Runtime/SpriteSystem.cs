@@ -15,6 +15,7 @@ namespace ECS2D.Rendering
     {
         private EntityQuery allSpriteQuery;
         private EntityQuery filteredSpriteQuery;
+        private EntityQuery shadowEligibleSpriteQuery;
         private readonly Dictionary<int, SpriteRenderGroup> renderGroups = new Dictionary<int, SpriteRenderGroup>();
         private Mesh quadMesh;
         private bool hasLoggedMissingDefinitions;
@@ -93,6 +94,19 @@ namespace ECS2D.Rendering
                 ComponentType.ReadOnly<SpriteData>(),
                 ComponentType.ReadOnly<SpriteSheetRenderKey>(),
                 ComponentType.ReadOnly<SpriteCullState>());
+            shadowEligibleSpriteQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[]
+                {
+                    ComponentType.ReadOnly<SpriteData>(),
+                    ComponentType.ReadOnly<SpriteSheetRenderKey>(),
+                    ComponentType.ReadOnly<SpriteCullState>()
+                },
+                None = new[]
+                {
+                    ComponentType.ReadOnly<ParticleRuntime>()
+                }
+            });
         }
 
         protected override void OnStartRunning()
@@ -132,7 +146,9 @@ namespace ECS2D.Rendering
 
             foreach (var group in renderGroups.Values)
             {
-                filteredSpriteQuery.SetSharedComponentFilter(SpriteSheetRuntime.CreateRenderKey(group.SheetId));
+                SpriteSheetRenderKey renderKey = SpriteSheetRuntime.CreateRenderKey(group.SheetId);
+                filteredSpriteQuery.SetSharedComponentFilter(renderKey);
+                shadowEligibleSpriteQuery.SetSharedComponentFilter(renderKey);
                 int spriteCount = filteredSpriteQuery.CalculateEntityCount();
 
                 if (spriteCount == 0)
@@ -141,32 +157,29 @@ namespace ECS2D.Rendering
                     continue;
                 }
 
+                int shadowEligibleCount = shadowEligibleSpriteQuery.CalculateEntityCount();
+                bool hasParticleSprites = shadowEligibleCount < spriteCount;
+
                 renderedSpriteCount += spriteCount;
                 group.EnsureCapacity(spriteCount);
-                group.ResetCount(spriteCount);
                 group.AdvanceFrame();
 
-                var chunkBaseEntityIndices = filteredSpriteQuery.CalculateBaseEntityIndexArrayAsync(
-                    Allocator.TempJob,
-                    Dependency,
-                    out JobHandle chunkBaseEntityIndicesHandle);
-
-                var uploadHandle = new UploadSpriteDataJob
+                if (hasParticleSprites && shadowEligibleCount > 0)
                 {
-                    SpriteDataType = spriteDataType,
-                    ChunkBaseEntityIndices = chunkBaseEntityIndices,
-                    TranslationAndRotationOutput = group.BeginTranslationAndRotationWrite(spriteCount),
-                    ScaleOutput = group.BeginScaleWrite(spriteCount),
-                    ColorOutput = group.BeginColorWrite(spriteCount),
-                    FrameIndexOutput = group.BeginFrameIndexWrite(spriteCount),
-                    FlipOutput = group.BeginFlipWrite(spriteCount),
-                    RenderDepthOutput = group.BeginRenderDepthWrite(spriteCount),
-                    MaxFrameIndex = math.max(0, group.FrameCount - 1)
-                }.ScheduleParallel(filteredSpriteQuery, chunkBaseEntityIndicesHandle);
+                    group.ResetCount(shadowEligibleCount);
+                    UploadSpriteData(shadowEligibleSpriteQuery, shadowEligibleCount, spriteDataType, group);
+                    if (!group.Draw(GetQuadMesh(), drawShadowPass: true, drawSpritePass: false))
+                    {
+                        needsRenderGroupRebuild = true;
+                        return;
+                    }
+                }
 
-                uploadHandle.Complete();
-                group.EndWrite();
-                if (!group.Draw(GetQuadMesh()))
+                group.ResetCount(spriteCount);
+                UploadSpriteData(filteredSpriteQuery, spriteCount, spriteDataType, group);
+
+                bool drawShadowPass = !hasParticleSprites;
+                if (!group.Draw(GetQuadMesh(), drawShadowPass, drawSpritePass: true))
                 {
                     needsRenderGroupRebuild = true;
                     return;
@@ -174,6 +187,7 @@ namespace ECS2D.Rendering
             }
 
             filteredSpriteQuery.ResetFilter();
+            shadowEligibleSpriteQuery.ResetFilter();
 
             if (renderedSpriteCount < totalSpriteCount)
             {
@@ -187,6 +201,35 @@ namespace ECS2D.Rendering
             {
                 hasLoggedUnmatchedSprites = false;
             }
+        }
+
+        private void UploadSpriteData(EntityQuery query, int spriteCount, ComponentTypeHandle<SpriteData> spriteDataType, SpriteRenderGroup group)
+        {
+            if (spriteCount <= 0)
+            {
+                return;
+            }
+
+            var chunkBaseEntityIndices = query.CalculateBaseEntityIndexArrayAsync(
+                Allocator.TempJob,
+                Dependency,
+                out JobHandle chunkBaseEntityIndicesHandle);
+
+            var uploadHandle = new UploadSpriteDataJob
+            {
+                SpriteDataType = spriteDataType,
+                ChunkBaseEntityIndices = chunkBaseEntityIndices,
+                TranslationAndRotationOutput = group.BeginTranslationAndRotationWrite(spriteCount),
+                ScaleOutput = group.BeginScaleWrite(spriteCount),
+                ColorOutput = group.BeginColorWrite(spriteCount),
+                FrameIndexOutput = group.BeginFrameIndexWrite(spriteCount),
+                FlipOutput = group.BeginFlipWrite(spriteCount),
+                RenderDepthOutput = group.BeginRenderDepthWrite(spriteCount),
+                MaxFrameIndex = math.max(0, group.FrameCount - 1)
+            }.ScheduleParallel(query, chunkBaseEntityIndicesHandle);
+
+            uploadHandle.Complete();
+            group.EndWrite();
         }
 
         protected override void OnDestroy()
@@ -421,9 +464,9 @@ namespace ECS2D.Rendering
                 activeFrameBuffers.ArgsBuffer.SetData(activeFrameBuffers.Args);
             }
 
-            public bool Draw(Mesh mesh)
+            public bool Draw(Mesh mesh, bool drawShadowPass, bool drawSpritePass)
             {
-                if (WriteIndex == 0)
+                if (WriteIndex == 0 || (!drawShadowPass && !drawSpritePass))
                 {
                     return true;
                 }
@@ -433,12 +476,16 @@ namespace ECS2D.Rendering
                     return false;
                 }
 
-                if (ShadowMaterial != null)
+                if (drawShadowPass && ShadowMaterial != null)
                 {
                     Graphics.DrawMeshInstancedIndirect(mesh, 0, ShadowMaterial, Bounds, frameBuffers[activeFrameBufferIndex].ArgsBuffer);
                 }
 
-                Graphics.DrawMeshInstancedIndirect(mesh, 0, Material, Bounds, frameBuffers[activeFrameBufferIndex].ArgsBuffer);
+                if (drawSpritePass)
+                {
+                    Graphics.DrawMeshInstancedIndirect(mesh, 0, Material, Bounds, frameBuffers[activeFrameBufferIndex].ArgsBuffer);
+                }
+
                 return true;
             }
 

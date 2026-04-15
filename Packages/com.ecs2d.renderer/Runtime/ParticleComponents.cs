@@ -58,13 +58,24 @@ namespace ECS2D.Rendering
     {
         public float SpawnAccumulator;
         public float EmitterAge;
-        public int NextPoolIndex;
         public uint RandomState;
         public byte BurstConsumed;
     }
 
     [InternalBufferCapacity(16)]
     public struct ParticleEmitterParticleElement : IBufferElementData
+    {
+        public Entity Value;
+    }
+
+    [InternalBufferCapacity(16)]
+    public struct ParticleEmitterAvailableParticleElement : IBufferElementData
+    {
+        public Entity Value;
+    }
+
+    [InternalBufferCapacity(16)]
+    public struct ParticleEmitterRecycleParticleElement : IBufferElementData
     {
         public Entity Value;
     }
