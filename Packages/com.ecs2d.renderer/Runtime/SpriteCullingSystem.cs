@@ -19,7 +19,7 @@ namespace ECS2D.Rendering
         private EntityQuery movedSpriteCullQuery;
         private EntityQuery disabledSpriteCullQuery;
         private bool hasCameraSnapshot;
-        private int cachedCameraInstanceId;
+        private EntityId cachedCameraInstanceId;
         private float2 cachedCameraPosition;
         private float cachedOrthographicSize;
         private float cachedAspect;
@@ -90,7 +90,7 @@ namespace ECS2D.Rendering
                 }
 
                 hasCameraSnapshot = false;
-                cachedCameraInstanceId = 0;
+                cachedCameraInstanceId = EntityId.None;
                 return;
             }
 
@@ -99,7 +99,7 @@ namespace ECS2D.Rendering
             Vector3 cameraPosition = camera.transform.position;
             float2 cameraPosition2D = new float2(cameraPosition.x, cameraPosition.y);
             bool cameraChanged = !hasCameraSnapshot
-                || cachedCameraInstanceId != camera.GetInstanceID()
+                || cachedCameraInstanceId != camera.GetEntityId()
                 || math.distancesq(cameraPosition2D, cachedCameraPosition) > 0.000001f
                 || math.abs(camera.orthographicSize - cachedOrthographicSize) > 0.000001f
                 || math.abs(camera.aspect - cachedAspect) > 0.000001f;
@@ -114,7 +114,7 @@ namespace ECS2D.Rendering
             }.ScheduleParallel(query, state.Dependency);
 
             hasCameraSnapshot = true;
-            cachedCameraInstanceId = camera.GetInstanceID();
+            cachedCameraInstanceId = camera.GetEntityId();
             cachedCameraPosition = cameraPosition2D;
             cachedOrthographicSize = camera.orthographicSize;
             cachedAspect = camera.aspect;

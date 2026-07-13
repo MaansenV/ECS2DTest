@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Unity-6000.3%2B-000000?style=for-the-badge&logo=unity" alt="Unity 6000.3+" />
+  <img src="https://img.shields.io/badge/Unity-6000.5%2B-000000?style=for-the-badge&logo=unity" alt="Unity 6000.5+" />
   <img src="https://img.shields.io/badge/Entities-1.4.x-2D7DD2?style=for-the-badge" alt="Entities 1.4.x" />
   <img src="https://img.shields.io/badge/Package-UPM-00A67E?style=for-the-badge" alt="UPM Package" />
 </p>

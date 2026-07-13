@@ -133,8 +133,8 @@ namespace ECS2D.Rendering
 
                 hash.Add(definition.SheetId);
                 hash.Add(definition.FrameCount);
-                hash.Add(definition.BaseMaterial != null ? definition.BaseMaterial.GetInstanceID() : 0);
-                hash.Add(definition.Texture != null ? definition.Texture.GetInstanceID() : 0);
+                hash.Add(definition.BaseMaterial != null ? definition.BaseMaterial.GetEntityId() : EntityId.None);
+                hash.Add(definition.Texture != null ? definition.Texture.GetEntityId() : EntityId.None);
                 hash.Add(definition.WorldBounds.center);
                 hash.Add(definition.WorldBounds.size);
                 hash.Add(definition.InitialCapacity);
